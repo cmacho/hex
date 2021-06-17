@@ -53,3 +53,9 @@ def register(request):
         return HttpResponseRedirect(reverse('index'))
     else:
         return render(request, 'game/register.html')
+
+def games(request):
+    return HttpResponseRedirect(reverse('index'))
+
+def create_game(request):
+    return HttpResponseRedirect(reverse('index'))
