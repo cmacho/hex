@@ -8,8 +8,10 @@ urlpatterns = [
     path('logout', views.logout_view, name="logout"),
     path('register', views.register, name="register"),
     path('games', views.games, name='games'),
-    path('create_game', views.create_game, name='create_game')
+    path('game/<int:game_id>', views.game, name='game'),
+    path('create_game', views.create_game, name='create_game'),
 
     #API Routes
+    path("<int:game_id>/get_status", views.get_status, name='get_status'),
 
 ]

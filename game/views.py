@@ -1,8 +1,8 @@
 from django.shortcuts import render
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.urls import reverse
-from .models import User
+from .models import User, Game, Move
 
 # Create your views here.
 def index(request):
@@ -54,8 +54,26 @@ def register(request):
     else:
         return render(request, 'game/register.html')
 
+def game(request, game_id):
+    try:
+        game_object = Game.objects.get(pk=game_id)
+        return render(request, 'game/game.html', {
+            'game_id': game_object.id,
+            'game_has_started': game_object.game_has_started,
+            'player1': game_object.player1,
+            'player2': game_object.player2,
+        })
+    except Exception as e:
+        return HttpResponse(f'Could not find game {e}') #TODO: make 404
+
 def games(request):
     return HttpResponseRedirect(reverse('index'))
 
 def create_game(request):
-    return HttpResponseRedirect(reverse('index'))
+    return render(request, 'game/create_game.html')
+
+def get_status(request, game_id):
+    game_object = Game.objects.get(pk=game_id)
+    return JsonResponse({
+        'game_has_started': game_object.game_has_started
+    })

@@ -1,0 +1,74 @@
+{% extends 'game/layout.html' %}
+{% load static %}
+
+{% block body %}
+    <a href= "{% url 'login' %}">Login</a>
+    <a href="{% url 'register' %}">Register</a>
+    <a href="{% url 'logout' %}">Logout</a>
+    <a href="{% url 'create_game' %}">Create Game</a>
+    <a href="{% url 'games' %}">Games</a>
+    <div> Game {{ game_id }}</div>
+    <div id='the-div'>Game has not started.</div>
+    <div> {{player1.username}} </div>
+    <div> {{player1.pk}} </div>
+    <div> {{game_has_started}} </div>
+    <div> {{player2.pk}} </div>
+    <div> {{player2.username}} </div>
+    <div id='game-div'></div>
+    <!-- Load React. -->
+    <!-- Note: when deploying, replace "development.js" with "production.min.js". --> <!-- TODO -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script type="text/babel" src='{% static 'game/Game.js' %}'></script>
+    <script type="text/babel">
+        console.log('hello from first script');
+        const update_state = async (div_element) => {
+                console.log('starting update.state')
+            const url = "{% url 'get_status' game_id %}";
+            const res = await fetch(url);
+            const data = await res.json();
+            console.log(`json data is ${data}`)
+            console.log(`data.game_has_started is ${data.game_has_started}`)
+            if (data['game_has_started']) {
+                div_element.innerHTML = 'The game has started!';
+            } else {
+                div_element.innerHTML = 'Game has not started.';
+            }
+        };
+
+        const div = document.querySelector('#the-div');
+        setInterval(update_state, 7000, div);
+        console.log('hello after set_interval');
+
+        // React Stuff
+        console.log('hello from second script');
+        const domContainer = document.querySelector('#game-div');
+        {% if game_has_started %}
+            const game_has_started = true;
+        {% else %}
+            const game_has_started = false;
+        {% endif %}
+        const player1_id = {{ player1.pk }};
+        const player1_name = '{{ player1.username }}';
+        {% if player2 %}
+            const player2_id = {{ player2.pk }};
+            const player2_name = '{{ player2.username }}';
+        {% else %}
+            const player2_id = null;
+            const player2_username = null;
+        {% endif %}
+        console.log(player1_name);
+        console.log(player1_id);
+        console.log('hello!');
+        ReactDOM.render(
+            <Game
+                game_has_started={game_has_started}
+                player1_id = {player1_id}
+                player2_id = {player2_id}
+            />,
+            domContainer
+       );
+    </script>
+{% endblock %}
+
