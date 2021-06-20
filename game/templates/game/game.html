@@ -2,18 +2,7 @@
 {% load static %}
 
 {% block body %}
-    <a href= "{% url 'login' %}">Login</a>
-    <a href="{% url 'register' %}">Register</a>
-    <a href="{% url 'logout' %}">Logout</a>
-    <a href="{% url 'create_game' %}">Create Game</a>
-    <a href="{% url 'games' %}">Games</a>
     <div> Game {{ game_id }}</div>
-    <div id='the-div'>Game has not started.</div>
-    <div> {{player1.username}} </div>
-    <div> {{player1.pk}} </div>
-    <div> {{game_has_started}} </div>
-    <div> {{player2.pk}} </div>
-    <div> {{player2.username}} </div>
     <div id='game-div'></div>
     <!-- Load React. -->
     <!-- Note: when deploying, replace "development.js" with "production.min.js". --> <!-- TODO -->
@@ -22,27 +11,8 @@
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <script type="text/babel" src='{% static 'game/Game.js' %}'></script>
     <script type="text/babel">
-        console.log('hello from first script');
-        const update_state = async (div_element) => {
-                console.log('starting update.state')
-            const url = "{% url 'get_status' game_id %}";
-            const res = await fetch(url);
-            const data = await res.json();
-            console.log(`json data is ${data}`)
-            console.log(`data.game_has_started is ${data.game_has_started}`)
-            if (data['game_has_started']) {
-                div_element.innerHTML = 'The game has started!';
-            } else {
-                div_element.innerHTML = 'Game has not started.';
-            }
-        };
-
-        const div = document.querySelector('#the-div');
-        setInterval(update_state, 7000, div);
-        console.log('hello after set_interval');
-
         // React Stuff
-        console.log('hello from second script');
+        console.log('hello from script');
         const domContainer = document.querySelector('#game-div');
         {% if game_has_started %}
             const game_has_started = true;
@@ -56,16 +26,41 @@
             const player2_name = '{{ player2.username }}';
         {% else %}
             const player2_id = null;
-            const player2_username = null;
+            const player2_name = null;
         {% endif %}
-        console.log(player1_name);
-        console.log(player1_id);
-        console.log('hello!');
+        {% if player1color %}
+            const player1color = {{ player1color }};
+        {% else %}
+            const player1color = null;
+        {% endif %}
+        const moves = []
+        {% for move in moves %}
+            moves.push({
+                move_num: {{ move.move_num }},
+                x: {{ move.x }},
+                y: {{ move.y }},
+                player: {{ move.player}}
+            })
+        {% endfor %}
+        const color_selection_mode = {{ color_selection_mode }};
+        const game_id = {{ game_id }};
+        {% if request.user.is_authenticated %}
+            const my_user_id = {{ request.user.id }};
+        {% else %}
+            const my_user_id = null;
+        {% endif %}
         ReactDOM.render(
             <Game
                 game_has_started={game_has_started}
                 player1_id = {player1_id}
                 player2_id = {player2_id}
+                player1_name = {player1_name}
+                player2_name = {player2_name}
+                player1color = {player1color}
+                color_selection_mode = {color_selection_mode}
+                moves = {moves}
+                game_id = {game_id}
+                my_user_id = {my_user_id}
             />,
             domContainer
        );

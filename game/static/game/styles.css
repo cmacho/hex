@@ -1,1 +1,160 @@
+#surrounding {
+    width: 80%;
+    min-width: 260px;
+    margin: 0 auto;
+    padding-top: 2%;
+    padding-bottom: 2%;
+    padding-left: 2%;
+    padding-right: 2%;
+    position: relative;
+    background: #959595;
+}
 
+#grid {
+    position: relative;
+    width: 95%;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.clear:after {
+    content: "";
+    display: block;
+    clear: both;
+}
+
+#grid li {
+    list-style-type: none;
+    position: relative;
+    float: left;
+    width: 5.92%;
+    padding: 0 0 6.836027713625% 0;
+    -o-transform: rotate(-60deg) skewY(30deg);
+    -moz-transform: rotate(-60deg) skewY(30deg);
+    -webkit-transform: rotate(-60deg) skewY(30deg);
+    -ms-transform: rotate(-60deg) skewY(30deg);
+    transform: rotate(-60deg) skewY(30deg);
+    overflow: hidden;
+    visibility: hidden;
+}
+
+#grid li * {
+    visibility: visible;
+}
+
+#grid li .hidden {
+    visibility: hidden;
+}
+
+.parallelogram {
+    position: absolute;
+    left: 16.7%;
+    top: 2.5%;
+    height: 93.1%;
+    width: 64.0%;
+    transform: skew(30deg);
+    border-left: blue solid 2px;
+    border-right: blue solid 2px;
+    border-top: red solid 2px;
+    border-bottom: red solid 2px;
+    background: #282828;
+}
+
+@media only screen and (min-width: 2400px) {
+.parallelogram {
+    border-left: blue solid 10px;
+    border-right: blue solid 10px;
+    border-top: red solid 10px;
+    border-bottom: red solid 10px;
+}
+}
+
+@media only screen and (min-width: 2000px) and (max-width: 2400px) {
+.parallelogram {
+    border-left: blue solid 9px;
+    border-right: blue solid 9px;
+    border-top: red solid 9px;
+    border-bottom: red solid 9px;
+}
+}
+
+@media only screen and (min-width: 1600px) and (max-width: 1999px) {
+.parallelogram {
+    border-left: blue solid 8px;
+    border-right: blue solid 8px;
+    border-top: red solid 8px;
+    border-bottom: red solid 8px;
+}
+}
+
+@media only screen and (min-width: 1200px) and (max-width: 1599px) {
+.parallelogram {
+    border-left: blue solid 6px;
+    border-right: blue solid 6px;
+    border-top: red solid 6px;
+    border-bottom: red solid 6px;
+}
+}
+
+@media only screen and (min-width: 1000px) and (max-width: 1200px) {
+.parallelogram {
+    border-left: blue solid 5px;
+    border-right: blue solid 5px;
+    border-top: red solid 5px;
+    border-bottom: red solid 5px;
+}
+}
+
+@media only screen and (min-width: 620px) and (max-width: 1000px) {
+.parallelogram {
+    border-left: blue solid 3px;
+    border-right: blue solid 3px;
+    border-top: red solid 3px;
+    border-bottom: red solid 3px;
+}
+}
+
+
+#grid li .hexagon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #c4c4c0;
+    -o-transform: skewY(-30deg) rotate(60deg);
+    -moz-transform: skewY(-30deg) rotate(60deg);
+    -webkit-transform: skewY(-30deg) rotate(60deg);
+    -ms-transform: skewY(-30deg) rotate(60deg);
+    transform: skewY(-30deg) rotate(60deg);
+    overflow: hidden;
+}
+
+#grid li {
+    margin-right: 0.25%;
+}
+
+#grid li:nth-child(16n+16) {
+    margin-right: 0;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+#grid .row-right {
+    margin-top: -1.472410256395%;
+    margin-bottom: -1.472410256395%;
+    -o-transform: translateX(50%) rotate(-60deg) skewY(30deg);
+    -moz-transform: translateX(50%) rotate(-60deg) skewY(30deg);
+    -webkit-transform: translateX(50%) rotate(-60deg) skewY(30deg);
+    -ms-transform: translateX(50%) rotate(-60deg) skewY(30deg);
+    transform: translateX(50%) rotate(-60deg) skewY(30deg);
+}
+
+#grid .row-left {
+}
+
+#grid li:nth-child(32n+17) {
+    margin-left: 0.12%;
+}

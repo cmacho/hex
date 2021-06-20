@@ -5,10 +5,17 @@
 <html lang="en">
     <head>
         <title>Hex</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
         <link rel="stylesheet" href="{% static 'game/styles.css' %}">
     </head>
     <body>
+    {% if request.user.is_authenticated %}
+        <div>logged in as {{request.user.username}}</div>
+    {% endif %}
+    <a href= "{% url 'login' %}">Login</a>
+    <a href="{% url 'register' %}">Register</a>
+    <a href="{% url 'logout' %}">Logout</a>
+    <a href="{% url 'create_game' %}">Create Game</a>
+    <a href="{% url 'games' %}">Games</a>
         {% block body %}
         {% endblock %}
     </body>
