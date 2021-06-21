@@ -218,7 +218,7 @@ class Board extends React.Component {
     }
 
     render() {
-        //create array of tuples [i,j] for 1<=i<=11, 1<=j<=16
+        //create array of tuples [i,j] for 0<=i<=10, 0<=j<=15
         const indexGrid = []
         for (var i=0; i<11; i++) {
             for (var j=0; j<16; j++) {
@@ -274,7 +274,7 @@ function Hexagon(props) {
 
 
 /*
-* function renderGridHexagon
+* function copy_squares
 * parameters:
 *   squares: an array of arrays. In other words, a two dimensional array
 * returns:
@@ -294,11 +294,12 @@ function copy_squares(squares) {
 * function checkWinCondition
 * parameters:
 *   squares: array of arrays representing the 11x11 board. 1=red, 2=blue,0=empty
-*   color: color for which we want to check whether it satisfies the win condition
+*   color: an integer in [1,2] representing the color for which we want to
+*   check whether it satisfies the win condition. 1=red, 2=blue
 * returns:
     if color has a path connecting its two sides, returns an array of tuples [x,y]
     representing a shortest such path.
-    otherwise, return null
+    otherwise, returns null
 */
 function checkWinCondition(squares, color) {
     // use breadth first search
@@ -404,6 +405,7 @@ function getNeighbors(tup) {
     }
     return neighbors
 }
+
 
 //getCookie function copied from django documentation https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
 function getCookie(name) {
