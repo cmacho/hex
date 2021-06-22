@@ -23,6 +23,14 @@ class Game(models.Model):
         BLUE = 5, 'Player 2 is red'
         RAND = 6, 'Random Colors'
 
+    class Stage(models.IntegerChoices):
+        NOT_STARTED = 0, 'Game has not started'
+        CUTTING_CAKE = 1, 'Waiting for cake_cutter to make the first move (cake rule)'
+        CHOOSING_PIECE = 2, ('Waiting for the player who is ' +
+                             'not cake_cutter to choose a color (cake rule)')
+        NORMAL_PLAY = 3, 'Each player has a color, red or blue, and the game is ongoing'
+        GAME_HAS_ENDED = 4, 'The game has ended'
+
     def board_default():
         return [[0]*11]*11
 
@@ -35,7 +43,7 @@ class Game(models.Model):
     time_used_p1 = models.DurationField(default = datetime.timedelta()) #default is 0
     time_used_p2 = models.DurationField(default = datetime.timedelta()) #default is 0
     created_at = models.DateTimeField(auto_now_add=True, null=True)
-    game_has_started = models.BooleanField(default=False)
+    stage = models.IntegerField(choices=Stage.choices, default=0)
     game_started_at = models.DateTimeField(blank=True, null=True)
     color_selection_mode = models.IntegerField(choices=ColorSelectionMode.choices)
     time_per_player = models.DurationField()

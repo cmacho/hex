@@ -12,7 +12,6 @@ urlpatterns = [
     path('create_game', views.create_game, name='create_game'),
 
     #API Routes
-    path("<int:game_id>/get_status", views.get_status, name='get_status'),
     path("make_move/<int:game_id>", views.make_move, name='make_move'),
     path("game/get_moves/<int:game_id>", views.get_moves, name='get_moves'),
 ]

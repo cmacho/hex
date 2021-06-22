@@ -60,7 +60,7 @@ def game(request, game_id):
         game_object = Game.objects.get(pk=game_id)
         return render(request, 'game/game.html', {
             'game_id': game_object.id,
-            'game_has_started': game_object.game_has_started,
+            'stage': game_object.stage,
             'player1': game_object.player1,
             'player2': game_object.player2,
             'player1color': game_object.player1color,
@@ -76,12 +76,6 @@ def games(request):
 def create_game(request):
     return render(request, 'game/create_game.html')
 
-def get_status(request, game_id):
-    game_object = Game.objects.get(pk=game_id)
-    return JsonResponse({
-        'game_has_started': game_object.game_has_started
-    })
-
 def make_move(request, game_id):
     if request.method != 'PUT':
         return JsonResponse({"error": "PUT request required"}, status = 400)
@@ -89,17 +83,57 @@ def make_move(request, game_id):
     print("data is:")
     print(data)
     game = Game.objects.get(pk=game_id)
-    if not game.game_has_started:
-        return JsonResponse({"error": "cannot make move. game has not started"})
     if game.player1 == request.user:
         player_id_request = 1
     elif game.player2 == request.user:
         player_id_request = 2
     else:
-        return JsonResponse({"error": "not authorized to make a move in this game"})
-    if game.player1color is not None:
+        return JsonResponse({
+            "error": "not authorized to make a move in this game"
+        })
+    if game.stage == 0:
+        return JsonResponse({
+            "error": "cannot make move. game has not started"
+        })
+    elif game.stage == 1:
+        if player_id_request == game.cake_cutter:
+            color_to_move = 1
+            if data['player'] != player_id_request:
+                return JsonResponse({"error": "wrong player id"})
+            if data['move_num'] != game.latest_move_num + 1:
+                return JsonResponse({"error": "wrong move_num"})
+            new_board = game.board.copy()
+            if new_board[data['x'], data['y']] != 0:
+                return JsonResponse({
+                    "error": 'illegal move. hexagon already colored.'
+                })
+            new_board[data['x'], data['y']] = color_to_move
+            new_move = Move(move_num=data['move_num'], player=data['player'],
+                            game=game, x=data['x'], y=data['y'])
+            new_move.save()
+            game.latest_move_num = data['move_num']
+            game.latest_move_datetime = new_move.timestamp
+            game.board = new_board
+            return JsonResponse({
+                                 "status": "ok",
+                                 "new_latest_move_num": game.latest_move_num
+                                })
+        else:
+            return JsonResponse({"error": "it is not your turn.",
+                                 "cake_cutter": game.cake_cutter,
+                                 "player1color": game.player1color,
+                                 "game_latest_move_num": game_latest_move_num})
+    elif game.stage == 2:
+        not_cake_cutter = 3 - game.cake_cutter
+        return JsonResponse({
+            "error": (f"move cannot be played right now. waiting for"
+                      f"player {not_cake_cutter} to choose a color")
+        })
+    elif game.stage == 3:
         color_to_move = game.latest_move_num % 2 + 1
-        color_player_request = 2 - (player_id_request + game.player1color + 1) % 2
+        color_player_request = (
+            2 - (player_id_request + game.player1color + 1) % 2
+        )
         if color_to_move == color_player_request:
             if data['player'] != player_id_request:
                 return JsonResponse({"error": "wrong player id"})
@@ -107,10 +141,12 @@ def make_move(request, game_id):
                 return JsonResponse({"error": "wrong move_num"})
             new_board = game.board.copy()
             if new_board[data['x']][data['y']] != 0:
-                return JsonResponse({"error": 'illegal move. hexagon already colored.'})
+                return JsonResponse(
+                    {"error": 'illegal move. hexagon already colored.'
+                })
             new_board[data['x']][data['y']] = color_to_move
-            new_move = Move(move_num=data['move_num'], player=data['player'], game=game,
-                            x=data['x'], y=data['y'])
+            new_move = Move(move_num=data['move_num'], player=data['player'],
+                            game=game, x=data['x'], y=data['y'])
             print(f"new_move is {new_move}")
             print(f"new_move.game is {new_move.game}")
             new_move.save()
@@ -130,37 +166,9 @@ def make_move(request, game_id):
                         "color_to_move": color_to_move,
                         "color_player_request": color_player_request
             })
-    else:
-        if game.latest_move_num == 0 and player_id_request == game.cake_cutter:
-            color_to_move = 1
-            if data['player'] != player_id_request:
-                return JsonResponse({"error": "wrong player id"})
-            if data['move_num'] != game.latest_move_num + 1:
-                return JsonResponse({"error": "wrong move_num"})
-            new_board = game.board.copy()
-            if new_board[data['x'], data['y']] != 0:
-                return JsonResponse({"error": 'illegal move. hexagon already colored.'})
-            new_board[data['x'], data['y']] = color_to_move
-            new_move = Move(move_num=data['move_num'], player=data['player'], game=game,
-                            x=data['x'], y=data['y'])
-            new_move.save()
-            game.latest_move_num = data['move_num']
-            game.latest_move_datetime = new_move.timestamp
-            game.board = new_board
-            return JsonResponse({
-                                 "status": "ok",
-                                 "new_latest_move_num": game.latest_move_num
-                                })
-        elif game_latest_move_num > 0:
-            print(f'integrity error in game. player1color is None but latest_move_num>0.')
-            return JsonResponse({"error": "it is not your turn",
-                                 "player1color": game.player1color,
-                                 "game_latest_move_num": game_latest_move_num})
-        else:
-            return JsonResponse({"error": "it is not your turn.",
-                                 "cake_cutter": game.cake_cutter,
-                                 "player1color": game.player1color,
-                                 "game_latest_move_num": game_latest_move_num})
+    elif game.stage == 4:
+        return JsonRespone({"error": "Game has already ended"})
+
 
 @login_required
 def get_moves(request, game_id):

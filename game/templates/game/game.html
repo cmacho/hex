@@ -14,11 +14,7 @@
         // React Stuff
         console.log('hello from script');
         const domContainer = document.querySelector('#game-div');
-        {% if game_has_started %}
-            const game_has_started = true;
-        {% else %}
-            const game_has_started = false;
-        {% endif %}
+        const stage = {{ stage }};
         const player1_id = {{ player1.pk }};
         const player1_name = '{{ player1.username }}';
         {% if player2 %}
@@ -51,7 +47,7 @@
         {% endif %}
         ReactDOM.render(
             <Game
-                game_has_started={game_has_started}
+                stage = {stage}
                 player1_id = {player1_id}
                 player2_id = {player2_id}
                 player1_name = {player1_name}

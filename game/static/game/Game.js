@@ -63,7 +63,7 @@ class Game extends React.Component {
 
         this.state = {
             squares_history: squares_history,
-            game_has_started: props.game_has_started,
+            stage: props.stage,
             my_user_id: props.my_user_id,
             my_player_num: my_player_num,
             player1_id: props.player1_id,
@@ -73,8 +73,7 @@ class Game extends React.Component {
             player1color: props.player1color,
             color_selection_mode: props.color_selection_mode,
             cake_cutter: props.cake_cutter,
-            is_my_turn: is_my_turn,
-            cake_rule_state: 0 //TODO
+            is_my_turn: is_my_turn
         }
     }
 
@@ -98,11 +97,11 @@ class Game extends React.Component {
     }
 
     perhapsGetUpdate = () => {
-        // for now only consider the case when cake rule state === 0, i.e.
-        // when it is not currently time for a player to choose a color.
+        // for now only consider the case when stage === 3, i.e. normal play
+        // TODO the other cases.
         console.log('should I get updates?');
         if (!this.state.is_my_turn &&
-            (this.state.cake_rule_state === 0) &&
+            (this.state.stage === 3) &&
             this.state.my_user_id !== null) {
             console.log('getting updates');
             this.getUpdate()
@@ -132,7 +131,9 @@ class Game extends React.Component {
 
     handleClick(i,j) {
         console.log(`(${i},${j}) was clicked`)
-        if (this.state.is_my_turn && this.squareIsEmpty(i,j)) {
+        if (this.state.stage === 3 && this.state.is_my_turn
+            && this.squareIsEmpty(i,j)) {
+            console.log('hello there?');
             const move = {
                 player: this.state.my_player_num,
                 move_num: this.state.squares_history.length,
@@ -152,6 +153,8 @@ class Game extends React.Component {
                 headers: {'X-CSRFToken': csrftoken},
                 body: JSON.stringify(move)
             })
+
+            //TODO check whether game is over (board full or win condition)
         }
     }
 
@@ -160,7 +163,7 @@ class Game extends React.Component {
     }
 
     render() {
-        if (this.state.game_has_started) {
+        if (this.state.stage !== 0) {
             var squares = this.state.squares_history[this.state.squares_history.length - 1]
             return (
                 <div>
@@ -315,15 +318,15 @@ function checkWinCondition(squares, color) {
     if (color === 1) {
         for (var i=0; i<11; i++) {
             if (squares[0][i] === color) {
-                q.push([0][i])
-                distances([0][i]) = 1
+                q.push([0, i]);
+                distances[0][i] = 1;
             }
         }
     } else if (color === 2) {
         for (var i=0; i<11; i++) {
             if (squares[i][0] === color) {
-                q.push([i][0])
-                distances([i][0]) = 1
+                q.push([i, 0])
+                distances[i][0] == 1
             }
         }
     } else {
