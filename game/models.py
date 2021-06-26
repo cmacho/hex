@@ -51,6 +51,7 @@ class Game(models.Model):
     last_ping_player1 = models.DateTimeField(blank=True, null=True)
     last_ping_player2 = models.DateTimeField(blank=True, null=True)
     cake_cutter = models.IntegerField(blank=True, null=True)
+    winner = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return f"game {self.id} created by {self.player1} at {self.created_at}"
@@ -62,7 +63,7 @@ class Move(models.Model):
     y = models.IntegerField()
     player = models.IntegerField() # player 1 or 2
     timestamp = models.DateTimeField(auto_now_add=True)
-    move_num = models.IntegerField()
+    move_num = models.IntegerField(unique=True)
 
     def __str__(self):
         return f"move number {self.move_num} at ({self.x},{self.y}) at {self.timestamp}"

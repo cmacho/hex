@@ -73,7 +73,8 @@ class Game extends React.Component {
             player1color: props.player1color,
             color_selection_mode: props.color_selection_mode,
             cake_cutter: props.cake_cutter,
-            is_my_turn: is_my_turn
+            is_my_turn: is_my_turn,
+            winner: props.winner
         }
     }
 
@@ -115,14 +116,16 @@ class Game extends React.Component {
         const data = await res.json();
         console.log(data);
         console.log(`latest_move_num is ${latest_move_num}`);
-        if (data['move_num'] === latest_move_num + 1) {
-            const move = data;
+        if (data.latest_move['move_num'] === latest_move_num + 1) {
+            const move = data.latest_move;
             const squares_history = this.state.squares_history.slice();
             const current_squares = squares_history[squares_history.length - 1];
             const squares_new = this.execute_move(move, current_squares);
             this.setState({
                 squares_history: squares_history.concat([squares_new]),
-                is_my_turn: true
+                is_my_turn: true,
+                stage: data.stage,
+                winner: data.winner
             })
         } else if (data['move_num'] > latest_move_num + 1) {
             // TODO handle error
@@ -133,7 +136,7 @@ class Game extends React.Component {
         console.log(`(${i},${j}) was clicked`)
         if (this.state.stage === 3 && this.state.is_my_turn
             && this.squareIsEmpty(i,j)) {
-            console.log('hello there?');
+            console.log('hello there?'); //TODO remove this
             const move = {
                 player: this.state.my_player_num,
                 move_num: this.state.squares_history.length,
@@ -147,14 +150,28 @@ class Game extends React.Component {
                 squares_history: squares_history.concat([squares_new]),
                 is_my_turn: false
             })
+
+            const color = 2 - move.move_num % 2;
+            const winning_path = checkWinCondition(squares_new, color);
+            const is_win = (winning_path !== null);
             const csrftoken = getCookie('csrftoken');
             fetch(`/make_move/${this.props.game_id}`, {
                 method: 'PUT',
                 headers: {'X-CSRFToken': csrftoken},
-                body: JSON.stringify(move)
+                body: JSON.stringify({
+                    move: move,
+                    win: is_win,
+                    winning_path: winning_path
+                })
             })
 
-            //TODO check whether game is over (board full or win condition)
+            if (is_win) {
+                this.setState({
+                    stage: 4,
+                    winner: move.player
+                })
+            }
+
         }
     }
 
@@ -314,7 +331,7 @@ function checkWinCondition(squares, color) {
         }
     }
 
-    q = [] // queue
+    const q = [] // queue
     if (color === 1) {
         for (var i=0; i<11; i++) {
             if (squares[0][i] === color) {
@@ -335,11 +352,12 @@ function checkWinCondition(squares, color) {
     }
 
     var current_dist
+    var current_tup, neighbors, neighbor, x, y
     while (q.length > 0) {
         current_tup = q.shift()
-        current_dist = distances[current_tup[0], current_tup[1]]
+        current_dist = distances[current_tup[0]][current_tup[1]]
         neighbors = getNeighbors(current_tup)
-        for (neighbor of neighbors) {
+        for (var neighbor of neighbors) {
             x = neighbor[0];
             y = neighbor[1];
             if (squares[x][y] === color && distances[x][y] === null) {
@@ -347,6 +365,11 @@ function checkWinCondition(squares, color) {
                 if ((color === 1 && x === 10) || (color === 2 && y === 10)) {
                     // found path. now backtrack path and build array of the
                     // squares belonging to the path. Then return that array
+                    console.log('distances is');
+                    console.log(distances);
+                    console.log('neighbor is');
+                    console.log(neighbor);
+                    console.log('starting build_path');
                     return build_path(neighbor, distances)
                 } else {
                     q.push(neighbor)
@@ -360,14 +383,16 @@ function checkWinCondition(squares, color) {
 
 // a helper function for checkWinCondition. Returns the shortest path
 function build_path(goal_vertex, distances) {
-    var current_dist = distances[goal_vertex[0], goal_vertex[1]];
+    var current_dist = distances[goal_vertex[0]][goal_vertex[1]];
     var current_vertex = goal_vertex;
-    path_arr = [goal_vertex]
+    var neighbor, neighbors
+    const path_arr = [goal_vertex]
     while(current_dist>1) {
+        console.log(`current_dist is ${current_dist}`)
         current_dist = current_dist - 1;
         neighbors = getNeighbors(current_vertex);
         for (neighbor of neighbors) {
-            if (distances[neighbor[0], neighbor[1]] == current_dist) {
+            if (distances[neighbor[0]][neighbor[1]] == current_dist) {
                 current_vertex = neighbor
             }
         }

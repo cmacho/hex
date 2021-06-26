@@ -45,6 +45,11 @@
         {% else %}
             const my_user_id = null;
         {% endif %}
+        {% if winner %}
+            const winner = {{ winner }};
+        {% else %}
+            const winner = null;
+        {% endif %}
         ReactDOM.render(
             <Game
                 stage = {stage}
@@ -57,6 +62,7 @@
                 moves = {moves}
                 game_id = {game_id}
                 my_user_id = {my_user_id}
+                winner = {winner}
             />,
             domContainer
        );
