@@ -37,7 +37,7 @@ class Game(models.Model):
     player1 = models.ForeignKey("User", on_delete=models.PROTECT, related_name='games_p1')
     player2 = models.ForeignKey("User", on_delete=models.PROTECT, related_name='games_p2', blank=True, null=True)
     player1color = models.IntegerField(choices=Color.choices, blank=True, null=True)
-    latest_move_num = models.IntegerField(blank=True, null=True)
+    latest_move_num = models.IntegerField(blank=True, null=True, default=0)
     latest_move_datetime = models.DateTimeField(blank=True, null=True)
     board = models.JSONField(blank=True, null=True, default=board_default)
     time_used_p1 = models.DurationField(default = datetime.timedelta()) #default is 0
@@ -52,6 +52,8 @@ class Game(models.Model):
     last_ping_player2 = models.DateTimeField(blank=True, null=True)
     cake_cutter = models.IntegerField(blank=True, null=True)
     winner = models.IntegerField(blank=True, null=True)
+    player1_ready = models.BooleanField(default=False)
+    player2_ready = models.BooleanField(default=False)
 
     def __str__(self):
         return f"game {self.id} created by {self.player1} at {self.created_at}"
@@ -63,7 +65,7 @@ class Move(models.Model):
     y = models.IntegerField()
     player = models.IntegerField() # player 1 or 2
     timestamp = models.DateTimeField(auto_now_add=True)
-    move_num = models.IntegerField(unique=True)
+    move_num = models.IntegerField() # TODO make move_num together with game unique
 
     def __str__(self):
         return f"move number {self.move_num} at ({self.x},{self.y}) at {self.timestamp}"

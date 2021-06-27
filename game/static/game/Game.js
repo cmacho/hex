@@ -98,37 +98,75 @@ class Game extends React.Component {
     }
 
     perhapsGetUpdate = () => {
-        // for now only consider the case when stage === 3, i.e. normal play
-        // TODO the other cases.
         console.log('should I get updates?');
         if (!this.state.is_my_turn &&
-            (this.state.stage === 3) &&
+            (this.state.stage === 3 || this.state.stage === 1) &&
             this.state.my_user_id !== null) {
             console.log('getting updates');
-            this.getUpdate()
+            this.getUpdate();
+        } else if ((this.state.stage === 2) &&
+                   (this.state.my_player_num == this.state.cake_cutter) &&
+                   (this.state.my_user_id !== null)) {
+            console.log('getting update on player colors');
+            this.getColorUpdate();
         }
     }
 
     getUpdate = async () => {
-        const url = `get_moves/${this.props.game_id}`;
+        const url = `/game/get_moves/${this.props.game_id}`;
         const latest_move_num = this.state.squares_history.length - 1;
         const res = await fetch(url);
         const data = await res.json();
         console.log(data);
         console.log(`latest_move_num is ${latest_move_num}`);
-        if (data.latest_move['move_num'] === latest_move_num + 1) {
+        if (data.latest_move === null) {
+            console.log('latest_move received is null')
+        } else if (data.latest_move['move_num'] === latest_move_num + 1) {
             const move = data.latest_move;
             const squares_history = this.state.squares_history.slice();
-            const current_squares = squares_history[squares_history.length - 1];
+            const current_squares = (
+                squares_history[squares_history.length - 1]
+            );
             const squares_new = this.execute_move(move, current_squares);
             this.setState({
                 squares_history: squares_history.concat([squares_new]),
                 is_my_turn: true,
                 stage: data.stage,
-                winner: data.winner
+                winner: data.winner,
+                player1color: data.player1color
             })
         } else if (data['move_num'] > latest_move_num + 1) {
             // TODO handle error
+        }
+    }
+
+    getColorUpdate = async () => {
+        const url = `/get_colors/${this.props.game_id}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        console.log(data)
+        if (data.stage === 3) {
+            //determine whose turn it is
+            var blueplayer;
+            var my_turn;
+            if (data.player1color === 1) {
+                blueplayer = 2
+            } else if (data.player1color === 2) {
+                blueplayer = 1
+            } else {
+                console.log('invalid server response')
+            }
+
+            if (this.state.my_player_num === blueplayer) {
+                my_turn = true;
+            } else {
+                my_turn = false;
+            }
+            this.setState({
+                is_my_turn: my_turn,
+                stage: data.stage,
+                player1color: data.player1color
+            })
         }
     }
 
@@ -172,26 +210,143 @@ class Game extends React.Component {
                 })
             }
 
+        } else if (this.state.stage === 1 && this.state.is_my_turn) {
+            const move = {
+                player: this.state.my_player_num,
+                move_num: this.state.squares_history.length,
+                x: i,
+                y: j
+            };
+            const squares_history = this.state.squares_history.slice();
+            const current_squares = squares_history[squares_history.length - 1];
+            const squares_new = this.execute_move(move, current_squares);
+            this.setState({
+                squares_history: squares_history.concat([squares_new]),
+                is_my_turn: false,
+                stage: 2
+            })
+            const csrftoken = getCookie('csrftoken');
+            const is_win = false;
+            const winning_path = null;
+            fetch(`/make_move/${this.props.game_id}`, {
+                method: 'PUT',
+                headers: {'X-CSRFToken': csrftoken},
+                body: JSON.stringify({
+                    move: move,
+                    win: is_win,
+                    winning_path: winning_path
+                })
+            })
         }
     }
 
-    updateState(move) {
+    chooseColor(i) {
+        var player1color
+        if (this.state.my_player_num === 1) {
+            player1color = i;
+        } else {
+            player1color = 3 - i;
+        }
 
+        const csrftoken = getCookie('csrftoken');
+        fetch(`/choose_color/${this.props.game_id}`, {
+            method: 'PUT',
+            headers: {'X-CSRFToken': csrftoken },
+            body: JSON.stringify({
+                player1color: player1color
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                //determine whose turn it is
+                console.log('the status is ok');
+                var blueplayer;
+                if (player1color === 1) {
+                    blueplayer = 2;
+                } else {
+                    blueplayer = 1;
+                }
+                console.log(`blueplayer is ${blueplayer}`);
+                var my_turn;
+                if (this.state.my_player_num === blueplayer) {
+                    my_turn = true;
+                } else {
+                    my_turn = false;
+                }
+                this.setState({
+                    player1color: player1color,
+                    stage: data.stage,
+                    is_my_turn: my_turn
+                });
+            }
+
+        });
     }
 
     render() {
-        if (this.state.stage !== 0) {
+        if (this.state.stage === 0) {
+            return <GameMenu />
+        } else {
             var squares = this.state.squares_history[this.state.squares_history.length - 1]
+            var top_div;
+            var winner_name;
+            if (this.state.stage === 1 &&
+                this.state.my_player_num === this.state.cake_cutter) {
+                top_div = (
+                    <div>
+                        Play the first move. Afterwards, player
+                        {3 - this.state.cake_cutter} gets to choose,
+                        which color to continue playing as.
+                    </div>
+               );
+            } else if (this.state.stage === 2 &&
+                       this.state.my_player_num === this.state.cake_cutter) {
+                top_div = (
+                    <div>
+                        Waiting for player  {3 - this.state.cake_cutter} to
+                        choose who gets to play as which color.
+                    </div>
+               );
+            } else if (this.state.stage === 1 &&
+                       this.state.my_player_num === 3 - this.state.cake_cutter) {
+                top_div = (
+                    <div>
+                        Waiting for player {this.state.cake_cutter}
+                        to play the first move. Afterwards you get to choose a color.
+                    </div>
+               );
+
+            } else if (this.state.stage === 2 &&
+                       this.state.my_player_num === 3 - this.state.cake_cutter) {
+                top_div = (
+                    <div>
+                        Choose a color.
+                        <button onClick={() => this.chooseColor(1)}>Red</button>
+                        <button onClick={() => this.chooseColor(2)}>Blue</button>
+                    </div>
+               );
+            } else if (this.state.stage === 4) {
+                if (this.state.winner === 1) {
+                    winner_name = this.state.player1_name;
+                } else {
+                    winner_name = this.state.player2_name;
+                }
+                top_div = (
+                    <div>
+                        The game has ended. {winner_name} has won.
+                    </div>
+                )
+            }
             return (
                 <div>
-                    <div>The game has started!</div>
+                {top_div}
                     <Board
                         onClick={(i,j) => this.handleClick(i,j)}
-                        squares={squares}/>
+                        squares={squares}
+                    />
                 </div>
             )
-        } else {
-            return <GameMenu />
         }
     }
 }
