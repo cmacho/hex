@@ -18,6 +18,6 @@ urlpatterns = [
          name='choose_color'),
     path("get_colors/<int:game_id>", views.get_colors, name='get_colors'),
     path("toggle_rdy/<int:game_id>", views.toggle_rdy, name='toggle_rdy'),
-    path("leave_game", views.leave_game, name="leave_game"),
-    path("get_player_info", views.get_player_info, name="get_player_info")
+    path("leave_game/<int:game_id>", views.leave_game, name="leave_game"),
+    path("get_player_info/<int:game_id>", views.get_player_info, name="get_player_info")
 ]

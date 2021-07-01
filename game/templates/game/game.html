@@ -55,6 +55,16 @@
         {% else %}
             const cake_cutter = null;
         {% endif %}
+        {% if player1_ready %}
+            const player1_ready = true;
+        {% else %}
+            const player1_ready = false;
+        {% endif %}
+        {% if player2_ready %}
+            const player2_ready = true;
+        {% else %}
+            const player2_ready = false;
+        {% endif %}
         ReactDOM.render(
             <Game
                 stage = {stage}
@@ -69,6 +79,8 @@
                 my_user_id = {my_user_id}
                 winner = {winner}
                 cake_cutter = {cake_cutter}
+                player1_ready = {player1_ready}
+                player2_ready = {player2_ready}
             />,
             domContainer
        );

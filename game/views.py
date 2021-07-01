@@ -351,18 +351,23 @@ def toggle_rdy(request, game_id):
             game.player1_ready = False
         elif data['ready'] == 1 and game.player2 == request.user:
             game.player2_ready = True
-        elif data['ready'] == 0 and game.player2 == requrest.user:
-            game.plahyer2_ready = False
+        elif data['ready'] == 0 and game.player2 == request.user:
+            game.player2_ready = False
         game.save()
     except:
         return JsonResponse({'error': 'could not update game'})
-    return JsonRespone({
-        'player1_ready': player1_ready,
-        'player2_ready': player2_ready,
-        'player1_id': game.player1.id,
-        'player2_id': game.player2.id,
-        'player1_name': game.player1.name,
-        'player2_name': game.player2.name
+    if game.player2 is None:
+        player2_id = None
+        player2_name = None
+    else:
+        player2_id = game.player2.id
+        player2_name = game.player2.username
+    return JsonResponse({
+        'status': 'ok',
+        'player1_ready': game.player1_ready,
+        'player2_ready': game.player2_ready,
+        'player2_id': player2_id,
+        'player2_name': player2_name
     })
 
 
@@ -379,13 +384,13 @@ def leave_game(request, game_id):
     if game.stage != 0:
         return JsonResponse({'error': 'game has already started'})
     game.player2 = None
+    game.player2_ready = False
+    game.save()
     return JsonResponse({'status':'ok'})
 
 
 @login_required
 def get_player_info(request, game_id):
-    if request.method != 'PUT':
-        return JsonResponse({"error": "PUT request required"}, status=400)
     try:
         game = Game.objects.get(pk=game_id)
     except:
@@ -396,12 +401,19 @@ def get_player_info(request, game_id):
     else:
         player1color_response = game.player1color
         cake_cutter_response = game.cake_cutter
+    if game.player2 is None:
+        player2_id = None
+        player2_name = None
+    else:
+        player2_id = game.player2.id
+        player2_name = game.player2.username
     return JsonResponse({
+        'status': 'ok',
         'stage': game.stage,
-        'player1_ready': player1_ready,
-        'player2_ready': player2_ready,
+        'player1_ready': game.player1_ready,
+        'player2_ready': game.player2_ready,
         'player1_id': game.player1.id,
-        'player2_id': game.player2.id,
-        'player1_name': game.player1.name,
-        'player2_name': game.player2.name
+        'player2_id': player2_id,
+        'player1_name': game.player1.username,
+        'player2_name': player2_name
     })

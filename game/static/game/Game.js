@@ -74,7 +74,9 @@ class Game extends React.Component {
             color_selection_mode: props.color_selection_mode,
             cake_cutter: props.cake_cutter,
             is_my_turn: is_my_turn,
-            winner: props.winner
+            winner: props.winner,
+            player1_ready: props.player1_ready,
+            player2_ready: props.player2_ready
         }
     }
 
@@ -109,6 +111,9 @@ class Game extends React.Component {
                    (this.state.my_user_id !== null)) {
             console.log('getting update on player colors');
             this.getColorUpdate();
+        } else if (this.state.stage == 0) {
+            console.log('getting update on players');
+            this.getPlayersUpdate();
         }
     }
 
@@ -166,6 +171,24 @@ class Game extends React.Component {
                 is_my_turn: my_turn,
                 stage: data.stage,
                 player1color: data.player1color
+            })
+        }
+    }
+
+    getPlayersUpdate = async () => {
+        const url = `/get_player_info/${this.props.game_id}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        console.log(data)
+        if (data.status === 'ok') {
+            this.setState({
+                stage: data.stage,
+                player1_ready: data.player1_ready,
+                player2_ready: data.player2_ready,
+                player1_id: data.player1_id,
+                player2_id: data.player2_id,
+                player1_name: data.player1_name,
+                player2_name: data.player2_name
             })
         }
     }
@@ -240,6 +263,50 @@ class Game extends React.Component {
         }
     }
 
+    handleReadyClick() {
+        const data_to_send = {}
+        if ((this.state.my_player_num === 1 && this.state.player1_ready) ||
+            (this.state.my_player_num === 2 && this.state.player2_ready)) {
+            console.log('case 1');
+            data_to_send['ready'] = 0
+        } else {
+            console.log('case 2');
+            data_to_send['ready'] = 1
+        }
+
+        console.log('data_to_send');
+        console.log(data_to_send);
+        const csrftoken = getCookie('csrftoken');
+        fetch(`/toggle_rdy/${this.props.game_id}`, {
+            method: 'PUT',
+            headers: {'X-CSRFToken': csrftoken},
+            body: JSON.stringify(data_to_send)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data['status'] === 'ok') {
+                console.log('changing state');
+                this.setState({
+                    player1_ready: data.player1_ready,
+                    player2_ready: data.player2_ready,
+                    player2_id: data.player2_id,
+                    player2_name: data.player2_name
+                });
+            }
+        })
+    }
+
+    handleLeaveClick() {
+        const csrftoken = getCookie('csrftoken');
+        fetch(`/leave_game/${this.props.game_id}`, {
+            method: 'PUT',
+            headers: {'X-CSRFToken': csrftoken}
+        })
+        .then(res => {
+            window.location.href = '/games'
+        })
+    }
+
     chooseColor(i) {
         var player1color
         if (this.state.my_player_num === 1) {
@@ -286,7 +353,15 @@ class Game extends React.Component {
 
     render() {
         if (this.state.stage === 0) {
-            return <GameMenu />
+            return <GameMenu
+                        player1_name={this.state.player1_name}
+                        player2_name={this.state.player2_name}
+                        player1_ready={this.state.player1_ready}
+                        player2_ready={this.state.player2_ready}
+                        my_player_num={this.state.my_player_num}
+                        onReadyClick={() => this.handleReadyClick()}
+                        onLeaveClick={() => this.handleLeaveClick()}
+                    />
         } else {
             var squares = this.state.squares_history[this.state.squares_history.length - 1]
             var top_div;
@@ -423,7 +498,55 @@ class GameMenu extends React.Component {
     }
 
     render() {
-        return <div>Game has not started yet.</div>
+        var readystring1, readystring2, readyButtonText, leaveButton
+        if (this.props.player1_ready) {
+            readystring1 = 'player1 is ready.'
+        } else {
+            readystring1 = 'player1 is not ready'
+        }
+        if (this.props.player2_ready) {
+            readystring2 = 'player2 is ready.'
+        } else {
+            readystring2 = 'player2 is not ready'
+        }
+        if ((this.props.my_player_num == 1 && player1_ready) ||
+           (this.props.my_player_num == 2 && player2_ready)) {
+            readyButtonText = 'Not ready'
+        } else {
+            readyButtonText = "Ready"
+        }
+
+        if (this.props.my_player_num == 2) {
+            leaveButton = <button onClick={this.props.onLeaveClick}>
+                            Leave Game
+                          </button>
+        }
+
+        return (
+            <div>
+                <div>
+                    Game has not started yet.
+                </div>
+                <div>
+                    {readystring1}
+                </div>
+                <div>
+                    {readystring2}
+                </div>
+                <div>
+                    <button onClick={this.props.onReadyClick}>
+                        {readyButtonText}
+                    </button>
+                </div>
+                <div>
+                    player1: {this.props.player1_name}
+                </div>
+                <div>
+                    player2: {this.props.player2_name}
+                </div>
+                {leaveButton}
+            </div>
+        )
     }
 }
 
