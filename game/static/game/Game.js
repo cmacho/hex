@@ -12,8 +12,6 @@ class Game extends React.Component {
             }
         }
 
-        var interval = setInterval(this.perhapsGetUpdate,1000)
-
         const squares_history = []
         squares_history.push(squares)
         console.log(props.moves)
@@ -32,33 +30,26 @@ class Game extends React.Component {
         }
         console.log('my_player_num:');
         console.log(my_player_num);
+
         var is_my_turn;
-        var my_color;
-        if (player1color === null) {
-            my_color = null;
-            if (squares_history.length === 1 &&
-                my_player_num === props.cake_cutter) {
-                is_my_turn = true;
-            } else {
-                is_my_turn = false;
-            }
+        const playerToMove = this.determinePlayerToMove(
+            props.stage,
+            props.player1color,
+            props.cake_cutter,
+            squares_history.length
+        );
+        if (playerToMove === my_player_num) {
+            is_my_turn = true;
         } else {
-            if (my_player_num === 1) {
-                my_color = props.player1color;
-            } else if (my_player_num === 2) {
-                my_color = 3 - props.player1color;
-            } else {
-                my_color = null
-            }
-            console.log('my_color:')
-            console.log(my_color)
-            if (my_color === null) {
-                is_my_turn = false;
-            } else {
-                is_my_turn =  (squares_history.length % 2 === my_color % 2)
-            }
-            console.log('is_my_turn:')
-            console.log(is_my_turn)
+            is_my_turn = false;
+        }
+
+        var seconds_used_p1 = props.seconds_used_p1;
+        var seconds_used_p2 = props.seconds_used_p2;
+        if (playerToMove === 1) {
+            seconds_used_p1 = seconds_used_p1 + props.seconds_current_move;
+        } else if (playerToMove === 2) {
+            seconds_used_p2 = seconds_used_p2 + props.seconds_current_move;
         }
 
         this.state = {
@@ -76,12 +67,68 @@ class Game extends React.Component {
             is_my_turn: is_my_turn,
             winner: props.winner,
             player1_ready: props.player1_ready,
-            player2_ready: props.player2_ready
+            player2_ready: props.player2_ready,
+            seconds_used_p1: seconds_used_p1,
+            seconds_used_p2: seconds_used_p2
         }
     }
 
+    componentDidMount() {
+        this.updateInterval = setInterval(() => this.perhapsGetUpdate(),5000);
+        if (this.props.use_time_control) {
+            this.tickInterval = setInterval(() => this.tick(), 1000);
+        }
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.updateInterval);
+        if (this.props.use_time_control) {
+            clearInterval(this.tickInterval);
+        }
+    }
+
+    tick() {
+        console.log('tick');
+        const playerToMove = this.determinePlayerToMove(
+            this.state.stage,
+            this.state.player1color,
+            this.state.cake_cutter,
+            this.state.squares_history.length
+        );
+        console.log(`playerToMove is ${playerToMove}`);
+        if (playerToMove === 1) {
+            console.log('adding one sec for p1');
+            this.setState(state => ({
+                seconds_used_p1: state.seconds_used_p1 + 1
+            }));
+        } else if (playerToMove === 2) {
+            console.log('adding one sec for p2')
+            this.setState(state => ({
+                seconds_used_p2: state.seconds_used_p2 + 1
+            }));
+        }
+    }
+
+    determinePlayerToMove(stage,
+                          player1color,
+                          cake_cutter,
+                          squares_hist_length) {
+        var playerToMove, colorToMove;
+        if (stage === 1) {
+            playerToMove = cake_cutter;
+        } else if (stage === 2) {
+            playerToMove = 3 - cake_cutter;
+        } else if (stage === 3) {
+            colorToMove = 2 - (squares_hist_length % 2);
+            playerToMove = 2 - (colorToMove + player1color + 1) % 2;
+        } else {
+            playerToMove = null;
+        }
+        return playerToMove;
+    }
+
     squareIsEmpty(i,j) {
-        const s_hist = this.state.squares_history
+        const s_hist = this.state.squares_history;
         const squares = s_hist[s_hist.length - 1]
         if (squares[i][j] === 0) {
             return true;
@@ -94,9 +141,9 @@ class Game extends React.Component {
         if (squares[move.x][move.y] !== 0) {
             return null;
         }
-        const new_squares = copy_squares(squares)
-        new_squares[move.x][move.y]= 2 - (move.move_num % 2)
-        return new_squares
+        const new_squares = copy_squares(squares);
+        new_squares[move.x][move.y]= 2 - (move.move_num % 2);
+        return new_squares;
     }
 
     perhapsGetUpdate = () => {
@@ -138,7 +185,8 @@ class Game extends React.Component {
                 is_my_turn: true,
                 stage: data.stage,
                 winner: data.winner,
-                player1color: data.player1color
+                seconds_used_p1: data.seconds_used_p1,
+                seconds_used_p2: data.seconds_used_p2
             })
         } else if (data['move_num'] > latest_move_num + 1) {
             // TODO handle error
@@ -170,7 +218,9 @@ class Game extends React.Component {
             this.setState({
                 is_my_turn: my_turn,
                 stage: data.stage,
-                player1color: data.player1color
+                player1color: data.player1color,
+                seconds_used_p1: data.seconds_used_p1,
+                seconds_used_p2: data.seconds_used_p2
             })
         }
     }
@@ -263,6 +313,13 @@ class Game extends React.Component {
                     winning_path: winning_path
                 })
             })
+            .then(res => res.json())
+            .then(data => {
+                this.setState({
+                    seconds_used_p1: data.seconds_used_p1,
+                    seconds_used_p2: data.seconds_used_p2
+                })
+            })
 
             if (is_win) {
                 this.setState({
@@ -296,6 +353,13 @@ class Game extends React.Component {
                     move: move,
                     win: is_win,
                     winning_path: winning_path
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                this.setState({
+                    seconds_used_p1: data.seconds_used_p1,
+                    seconds_used_p2: data.seconds_used_p2
                 })
             })
         }
@@ -382,7 +446,9 @@ class Game extends React.Component {
                 this.setState({
                     player1color: player1color,
                     stage: data.stage,
-                    is_my_turn: my_turn
+                    is_my_turn: my_turn,
+                    seconds_used_p1: data.seconds_used_p1,
+                    seconds_used_p2: data.seconds_used_p2
                 });
             }
 
@@ -402,8 +468,18 @@ class Game extends React.Component {
                     />
         } else {
             var squares = this.state.squares_history[this.state.squares_history.length - 1]
-            var top_div;
+            var top_div, time_div;
             var winner_name;
+            time_div = (
+                <div>
+                    <p>
+                    seconds_used_p1: {this.state.seconds_used_p1}
+                    </p>
+                    <p>
+                    seconds_used_p2: {this.state.seconds_used_p2}
+                    </p>
+                </div>
+            )
             if (this.state.stage === 1 &&
                 this.state.my_player_num === this.state.cake_cutter) {
                 top_div = (
@@ -453,6 +529,7 @@ class Game extends React.Component {
             }
             return (
                 <div>
+                {time_div}
                 {top_div}
                     <Board
                         onClick={(i,j) => this.handleClick(i,j)}

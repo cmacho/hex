@@ -52,8 +52,10 @@ class Game(models.Model):
     last_ping_player2 = models.DateTimeField(blank=True, null=True)
     cake_cutter = models.IntegerField(blank=True, null=True)
     winner = models.IntegerField(blank=True, null=True)
+    use_time_control = models.BooleanField()
     player1_ready = models.BooleanField(default=False)
     player2_ready = models.BooleanField(default=False)
+    time_color_chosen = models.DateTimeField(blank=True, null=True) # when the cake_cutter chose their color
 
     def __str__(self):
         return f"game {self.id} created by {self.player1} at {self.created_at}"

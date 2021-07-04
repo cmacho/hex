@@ -65,6 +65,14 @@
         {% else %}
             const player2_ready = false;
         {% endif %}
+        {% if use_time_control %}
+            const use_time_control = true;
+        {% else %}
+            const use_time_control = false;
+        {% endif %}
+        const seconds_used_p1 = {{seconds_used_p1}};
+        const seconds_used_p2 = {{seconds_used_p2}};
+        const seconds_current_move = {{seconds_current_move}}
         ReactDOM.render(
             <Game
                 stage = {stage}
@@ -81,6 +89,10 @@
                 cake_cutter = {cake_cutter}
                 player1_ready = {player1_ready}
                 player2_ready = {player2_ready}
+                seconds_used_p1 = {seconds_used_p1}
+                seconds_used_p2 = {seconds_used_p2}
+                seconds_current_move = {seconds_current_move}
+                use_time_control = {use_time_control}
             />,
             domContainer
        );
