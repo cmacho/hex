@@ -18,7 +18,7 @@ class Game(models.Model):
     class ColorSelectionMode(models.IntegerChoices):
         CAKE_RAND = 1, 'Cake Rule - random player slices cake'
         CAKE_1 = 2, 'Cake Rule - player 1 slices cake'
-        CAKE_2 = 3, 'Cake Rule - player 2 slices cale'
+        CAKE_2 = 3, 'Cake Rule - player 2 slices cake'
         RED = 4, 'Player 1 is red'
         BLUE = 5, 'Player 2 is red'
         RAND = 6, 'Random Colors'

@@ -89,7 +89,12 @@ def games(request):
 @login_required
 def create_game(request):
     if request.method == 'POST':
-        color_selection_mode = request.POST['color-assignment-rule']
+        try:
+            color_selection_mode = int(request.POST['color-assignment-rule'])
+            if color_selection_mode not in (1,2,3,4,5,6):
+                raise Exception()
+        except:
+            return HttpResponse("invalid color selection mode")
         cake_cutter = None
         player1color = None
         if color_selection_mode == 2:
@@ -100,29 +105,39 @@ def create_game(request):
             player1color = 1
         elif color_selection_mode == 5:
             player1color = 2
-        time_per_player_string = request.POST['time-per-player']
-        time_increment_string = request.POST['time-increment']
-        time_arr = [int(a) for a in time_per_player_string.split(',')]
-        increment_arr = [int(a) for a in time_increment_string.split(',')]
-        time_per_player = datetime.timedelta(days=time_arr[0],
-                                             hours=time_arr[1],
-                                             minutes=time_arr[2],
-                                             seconds=time_arr[3])
-        time_increment = datetime.timedelta(days=increment_arr[0],
-                                            hours=increment_arr[1],
-                                            minutes=increment_arr[2],
-                                            seconds=increment_arr[3])
-        game = Game(
-                player1=request.user,
-                color_selection_mode=color_selection_mode,
-                time_per_player=time_per_player,
-                time_increment_per_move=time_increment,
-                cake_cutter=cake_cutter,
-                player1color=player1color
-        )
-        game.save()
+        try:
+            time_per_player_string = request.POST['time-per-player']
+            time_increment_string = request.POST['time-increment']
+            time_arr = [int(a) for a in time_per_player_string.split(',')]
+            increment_arr = [int(a) for a in time_increment_string.split(',')]
+            time_per_player = datetime.timedelta(days=time_arr[0],
+                                                 hours=time_arr[1],
+                                                 minutes=time_arr[2],
+                                                 seconds=time_arr[3])
+            time_increment = datetime.timedelta(days=increment_arr[0],
+                                                hours=increment_arr[1],
+                                                minutes=increment_arr[2],
+                                                seconds=increment_arr[3])
+        except:
+            return HttpResponse('invalid time control options')
+        try:
+            game = Game(
+                    player1=request.user,
+                    color_selection_mode=color_selection_mode,
+                    time_per_player=time_per_player,
+                    time_increment_per_move=time_increment,
+                    cake_cutter=cake_cutter,
+                    player1color=player1color
+            )
+            game.save()
+        except:
+            return HttpResponse("could not create game")
+
         return HttpResponseRedirect(reverse('game', kwargs={'game_id': game.id}))
+
+    # if GET request:
     return render(request, 'game/create_game.html')
+
 
 @login_required
 def make_move(request, game_id):
@@ -353,7 +368,11 @@ def toggle_rdy(request, game_id):
             game.player2_ready = True
         elif data['ready'] == 0 and game.player2 == request.user:
             game.player2_ready = False
-        game.save()
+
+        if game.player1_ready and game.player2_ready:
+            start_game(game)
+        else:
+            game.save()
     except:
         return JsonResponse({'error': 'could not update game'})
     if game.player2 is None:
@@ -369,6 +388,20 @@ def toggle_rdy(request, game_id):
         'player2_id': player2_id,
         'player2_name': player2_name
     })
+
+
+def start_game(game):
+    if game.color_selection_mode == 1:
+        game.cake_cutter = random.randrange(1,3)
+    elif game.color_selection_mode == 6:
+        game.player1color = random.randrange(1,3)
+    if game.color_selection_mode in (1,2,3):
+        game.stage = 1
+    elif game.color_selection_mode in (4,5,6):
+        game.stage = 3
+    else:
+        print('invalid colorSelectionMode')
+    game.save()
 
 
 @login_required
@@ -415,5 +448,7 @@ def get_player_info(request, game_id):
         'player1_id': game.player1.id,
         'player2_id': player2_id,
         'player1_name': game.player1.username,
-        'player2_name': player2_name
+        'player2_name': player2_name,
+        'player1color': player1color_response,
+        'cake_cutter': cake_cutter_response,
     })

@@ -44,9 +44,9 @@ class Game extends React.Component {
             }
         } else {
             if (my_player_num === 1) {
-                my_color = props.player1color
+                my_color = props.player1color;
             } else if (my_player_num === 2) {
-                my_color = 3 - props.player1color
+                my_color = 3 - props.player1color;
             } else {
                 my_color = null
             }
@@ -180,7 +180,7 @@ class Game extends React.Component {
         const res = await fetch(url);
         const data = await res.json();
         console.log(data)
-        if (data.status === 'ok') {
+        if (data.stage === 0) {
             this.setState({
                 stage: data.stage,
                 player1_ready: data.player1_ready,
@@ -189,6 +189,44 @@ class Game extends React.Component {
                 player2_id: data.player2_id,
                 player1_name: data.player1_name,
                 player2_name: data.player2_name
+            })
+        } else if (data.stage === 1) {
+            var is_my_turn
+            if (this.state.my_player_num === data.cake_cutter) {
+                is_my_turn = true
+            } else {
+                is_my_turn = false
+            }
+            this.setState({
+                stage: data.stage,
+                player1_ready: data.player1_ready,
+                player2_ready: data.player2_ready,
+                player1_id: data.player1_id,
+                player2_id: data.player2_id,
+                player1_name: data.player1_name,
+                player2_name: data.player2_name,
+                player1color: data.player1color,
+                cake_cutter: data.cake_cutter,
+                is_my_turn: is_my_turn
+            })
+        } else if (data.stage === 3) {
+            var is_my_turn
+            if (this.state.my_player_num === data.player1color) {
+                is_my_turn = true
+            } else {
+                is_my_turn = false
+            }
+            this.setState({
+                stage: data.stage,
+                player1_ready: data.player1_ready,
+                player2_ready: data.player2_ready,
+                player1_id: data.player1_id,
+                player2_id: data.player2_id,
+                player1_name: data.player1_name,
+                player2_name: data.player2_name,
+                player1color: data.player1color,
+                cake_cutter: data.cake_cutter,
+                is_my_turn: is_my_turn
             })
         }
     }
