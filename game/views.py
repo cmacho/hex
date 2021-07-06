@@ -300,7 +300,6 @@ def make_move(request, game_id):
             game.total_time_player1 + game.time_increment_per_move
         )
         # deadline for next move by player 2:
-        # (or more precisely, for them to pick color)
         remaining_time = game.total_time_player2 - game.time_used_p2
         game.deadline_next_move = new_move.timestamp + remaining_time
     else:
@@ -309,7 +308,6 @@ def make_move(request, game_id):
             game.total_time_player2 + game.time_increment_per_move
         )
         # deadline for next move by player1:
-        # (or, more precisely, for them to pick a color)
         remaining_time = game.total_time_player1 - game.time_used_p1
         game.deadline_next_move = new_move.timestamp + remaining_time
 
