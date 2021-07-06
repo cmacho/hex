@@ -56,6 +56,11 @@ class Game(models.Model):
     player1_ready = models.BooleanField(default=False)
     player2_ready = models.BooleanField(default=False)
     time_color_chosen = models.DateTimeField(blank=True, null=True) # when the cake_cutter chose their color
+    total_time_player1 = models.DurationField() # time_per_player plus increments earned so far for player 1
+    total_time_player2 = models.DurationField() # time_per_player plus increments earned so far for player 2
+    resigned = models.IntegerField(blank=True, null=True) # =1 if player 1 has resigned, 2 if player 2 has
+    out_of_time = models.IntegerField(blank=True, null=True) # =1 if player 1 out of time. similar for 2.
+    deadline_next_move = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"game {self.id} created by {self.player1} at {self.created_at}"

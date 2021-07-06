@@ -74,7 +74,7 @@ class Game extends React.Component {
     }
 
     componentDidMount() {
-        this.updateInterval = setInterval(() => this.perhapsGetUpdate(),5000);
+        this.updateInterval = setInterval(() => this.perhapsGetUpdate(),500);
         if (this.props.use_time_control) {
             this.tickInterval = setInterval(() => this.tick(), 1000);
         }

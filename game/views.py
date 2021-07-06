@@ -9,9 +9,11 @@ from django.urls import reverse
 from .models import User, Game, Move
 import datetime
 
+
 # Create your views here.
 def index(request):
     return render(request, 'game/index.html')
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -29,9 +31,11 @@ def login_view(request):
     else:
         return render(request, 'game/login.html')
 
+
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse('index'))
+
 
 def register(request):
     if request.method == 'POST':
@@ -58,6 +62,7 @@ def register(request):
     else:
         return render(request, 'game/register.html')
 
+
 def game(request, game_id):
     try:
         game = Game.objects.get(pk=game_id)
@@ -79,6 +84,7 @@ def game(request, game_id):
         time_on_current_move = timezone.now() - game.game_started_at
     else:
         time_on_current_move = datetime.timedelta() # 0 seconds
+
     return render(request, 'game/game.html', {
         'game_id': game.id,
         'stage': game.stage,
@@ -91,19 +97,27 @@ def game(request, game_id):
         'cake_cutter': game.cake_cutter,
         'seconds_used_p1': int(game.time_used_p1.total_seconds()),
         'seconds_used_p2': int(game.time_used_p2.total_seconds()),
+        'total_time_player1': int(game.total_time_player1.total_seconds()),
+        'total_time_player2': int(game.total_time_player2.total_seconds()),
         'player1_ready': game.player1_ready,
         'player2_ready': game.player2_ready,
         'seconds_current_move': int(
             time_on_current_move.total_seconds()
         ),
         'use_time_control': game.use_time_control,
+        'time_per_player': int(game.time_per_player.total_seconds()),
+        'time_increment': int(game.time_increment_per_move.total_seconds()),
+        'resigned': game.resigned,
+        'out_of_time': game.out_of_time,
     })
+
 
 def games(request):
     games = Game.objects.filter(stage=0).all()
     return render(request, 'game/games.html', {
         'games': games
     })
+
 
 @login_required
 def create_game(request):
@@ -154,10 +168,13 @@ def create_game(request):
                     time_increment_per_move=time_increment,
                     cake_cutter=cake_cutter,
                     player1color=player1color,
-                    use_time_control=use_time_control
+                    use_time_control=use_time_control,
+                    total_time_player1=time_per_player,
+                    total_time_player2=time_per_player
             )
             game.save()
-        except:
+        except Exception as e:
+            print(f"exception occured: {e}")
             return HttpResponse("could not create game")
 
         return HttpResponseRedirect(reverse('game', kwargs={'game_id': game.id}))
@@ -173,8 +190,17 @@ def make_move(request, game_id):
     data = json.loads(request.body)
     print("data is:")
     print(data)
-    move_data = data['move']
-    game = Game.objects.get(pk=game_id)
+
+    try:
+        move_data = data['move']
+    except:
+        return JsonResponse({"error": "data[move] is not defined"})
+
+    try:
+        game = Game.objects.get(pk=game_id)
+    except:
+        return JsonResponse({"error": "could not find game"})
+
     if game.player1 == request.user:
         player_id_request = 1
     elif game.player2 == request.user:
@@ -183,60 +209,56 @@ def make_move(request, game_id):
         return JsonResponse({
             "error": "not authorized to make a move in this game"
         })
+
+    # verify data
+    try:
+        if move_data['player'] != player_id_request:
+            return JsonResponse({"error": "wrong player id"})
+        if move_data['move_num'] != game.latest_move_num + 1:
+            return JsonResponse({"error": "wrong move_num"})
+        if move_data['x'] not in range(11) or move_data['y'] not in range(11):
+            return JsonResponse({"error": "invalid coordinates."})
+        if game.board[move_data['x']][move_data['y']] != 0:
+            return JsonResponse({
+                "error": 'illegal move. hexagon already colored.'
+            })
+    except Exception as e:
+        print(f"exception occured: {e}")
+        return JsonResponse({"error": "invalid data in body of request"})
+
+    # check if time has already run out for the move
+    current_time = timezone.now()
+    if current_time > game.deadline_next_move:
+        game.out_of_time = player_id_request
+        game.stage = 4
+        game.winner = 3 - player_id_request
+        #TODO finish this part. perhaps update further fields, then return some JsonResponse....
+
+    # if game.stage is 0,2 or 4, return error
     if game.stage == 0:
         return JsonResponse({
             "error": "cannot make move. game has not started"
         })
-    elif game.stage == 1:
-        if player_id_request == game.cake_cutter:
-            color_to_move = 1
-            if move_data['player'] != player_id_request:
-                return JsonResponse({"error": "wrong player id"})
-            if move_data['move_num'] != game.latest_move_num + 1:
-                return JsonResponse({"error": "wrong move_num"})
-            new_board = game.board.copy()
-            if new_board[move_data['x']][move_data['y']] != 0:
-                return JsonResponse({
-                    "error": 'illegal move. hexagon already colored.'
-                })
-            new_board[move_data['x']][move_data['y']] = color_to_move
-            new_move = Move(move_num=move_data['move_num'],
-                            player=move_data['player'],
-                            game=game, x=move_data['x'], y=move_data['y'])
-            new_move.save()
-            game.latest_move_num = move_data['move_num']
-            game.latest_move_datetime = new_move.timestamp
-            game.board = new_board
-            game.stage = 2
-
-            current_time = timezone.now()
-            time_diff = current_time - game.game_started_at
-
-            if player_id_request == 1:
-                game.time_used_p1 = game.time_used_p1 + time_diff
-            else:
-                game.time_used_p2 = game.time_used_p2 + time_diff
-
-            game.save()
-            return JsonResponse({
-                                 "status": "ok",
-                                 "new_latest_move_num": game.latest_move_num,
-                                 "seconds_used_p1": int(game.time_used_p1.total_seconds()),
-                                 "seconds_used_p2": int(game.time_used_p2.total_seconds()),
-                                })
-        else:
-            return JsonResponse({
-                 "error": "it is not your turn.",
-                 "cake_cutter": game.cake_cutter,
-                 "player1color": game.player1color,
-                 "game_latest_move_num": game_latest_move_num
-            })
     elif game.stage == 2:
         not_cake_cutter = 3 - game.cake_cutter
         return JsonResponse({
             "error": (f"move cannot be played right now. waiting for"
                       f"player {not_cake_cutter} to choose a color")
         })
+    elif game.stage == 4:
+        return JsonRespone({"error": "Game has already ended"})
+
+    # if game.stage is 1 or 3, check whether move came from the player whose
+    # turn it actually is. Also set the variable color_to_move
+    elif game.stage == 1:
+        if player_id_request != game.cake_cutter:
+            return JsonResponse({
+                 "error": "it is not your turn.",
+                 "cake_cutter": game.cake_cutter,
+                 "player1color": game.player1color,
+                 "game_latest_move_num": game_latest_move_num
+            })
+        color_to_move = 1
     elif game.stage == 3:
         color_to_move = game.latest_move_num % 2 + 1
         print(f'game.latest_move_num is {game.latest_move_num}')
@@ -245,67 +267,81 @@ def make_move(request, game_id):
             2 - (player_id_request + game.player1color + 1) % 2
         )
         print(f"color_player_request is {color_player_request}")
-        if color_to_move == color_player_request:
-            if move_data['player'] != player_id_request:
-                return JsonResponse({"error": "wrong player id"})
-            if move_data['move_num'] != game.latest_move_num + 1:
-                return JsonResponse({"error": "wrong move_num"})
-            new_board = game.board.copy()
-            if new_board[move_data['x']][move_data['y']] != 0:
-                return JsonResponse(
-                    {"error": 'illegal move. hexagon already colored.'
-                })
-            new_board[move_data['x']][move_data['y']] = color_to_move
-            new_move = Move(move_num=move_data['move_num'],
-                            player=move_data['player'],
-                            game=game, x=move_data['x'], y=move_data['y'])
-            print(f"new_move is {new_move}")
-            print(f"new_move.game is {new_move.game}")
-            new_move.save()
-            game.latest_move_num = move_data['move_num']
-            if game.latest_move_datetime is not None:
-                time_diff = new_move.timestamp - game.latest_move_datetime
-            else:
-                time_diff = new_move.timestamp - game.game_started_at
-
-            if player_id_request == 1:
-                game.time_used_p1 = game.time_used_p1 + time_diff
-            else:
-                game.time_used_p2 = game.time_used_p2 + time_diff
-
-            game.latest_move_datetime = new_move.timestamp
-            game.board = new_board
-            print(f"new_board is {new_board}")
-
-            if data['win']:
-                data_win_path = data['winning_path']
-
-                verify = verify_winning_path(data_win_path,
-                                            new_board,
-                                            color_to_move)
-                if not verify:
-                    return JsonResponse({
-                        "error": "the submitted winning path is incorrect"
-                    })
-                game.winner = player_id_request
-                game.stage = 4
-
-            game.save()
-            return JsonResponse({
-                                 "status": "ok",
-                                 "new_latest_move_num": game.latest_move_num,
-                                 "seconds_used_p1": int(game.time_used_p1.total_seconds()),
-                                 "seconds_used_p2": int(game.time_used_p2.total_seconds())
-                                })
-
-        else:
+        if color_to_move != color_player_request:
             return JsonResponse({
                         "error": "it is not your turn",
                         "color_to_move": color_to_move,
                         "color_player_request": color_player_request
             })
-    elif game.stage == 4:
-        return JsonRespone({"error": "Game has already ended"})
+
+
+    # now actually make the move
+    new_board = game.board.copy()
+    new_board[move_data['x']][move_data['y']] = color_to_move
+    new_move = Move(move_num=move_data['move_num'],
+                    player=move_data['player'],
+                    game=game, x=move_data['x'], y=move_data['y'])
+    print(f"new_move is {new_move}")
+    print(f"new_move.game is {new_move.game}")
+    new_move.save()
+    game.latest_move_num = move_data['move_num']
+
+    if game.latest_move_datetime is None:
+        time_diff = new_move.timestamp - game.game_started_at
+    # note: latest_move_num has already been updated at this point.
+    elif game.latest_move_num == 2 and game.time_color_chosen is not None:
+        time_diff = new_move.timestamp - game.time_color_chosen
+    else:
+        time_diff = new_move.timestamp - game.latest_move_datetime
+
+    if player_id_request == 1:
+        game.time_used_p1 = game.time_used_p1 + time_diff
+        game.total_time_player1 = (
+            game.total_time_player1 + game.time_increment_per_move
+        )
+        # deadline for next move by player 2:
+        # (or more precisely, for them to pick color)
+        remaining_time = game.total_time_player2 - game.time_used_p2
+        game.deadline_next_move = new_move.timestamp + remaining_time
+    else:
+        game.time_used_p2 = game.time_used_p2 + time_diff
+        game.total_time_player2 = (
+            game.total_time_player2 + game.time_increment_per_move
+        )
+        # deadline for next move by player1:
+        # (or, more precisely, for them to pick a color)
+        remaining_time = game.total_time_player1 - game.time_used_p1
+        game.deadline_next_move = new_move.timestamp + remaining_time
+
+    game.latest_move_datetime = new_move.timestamp
+    game.board = new_board
+    print(f"new_board is {new_board}")
+
+    if data['win']:
+        data_win_path = data['winning_path']
+
+        verify = verify_winning_path(data_win_path,
+                                    new_board,
+                                    color_to_move)
+        if not verify:
+            return JsonResponse({
+                "error": "the submitted winning path is incorrect"
+            })
+        game.winner = player_id_request
+        game.stage = 4
+
+    if game.stage == 1:
+        game.stage = 2
+
+    game.save()
+    return JsonResponse({
+                         "status": "ok",
+                         "new_latest_move_num": game.latest_move_num,
+                         "seconds_used_p1": int(game.time_used_p1.total_seconds()),
+                         "seconds_used_p2": int(game.time_used_p2.total_seconds()),
+                         'total_time_player1': int(game.total_time_player1.total_seconds()),
+                         'total_time_player2': int(game.total_time_player2.total_seconds()),
+                        })
 
 
 @login_required
@@ -335,15 +371,37 @@ def choose_color(request, game_id):
         return JsonResponse({
             "error": "the other player should choose a color"
         })
+    if data['player1color'] not in [1,2]:
+        return JsonResponse({
+            "error": "player1color needs to be 1 or 2"
+        })
     game.player1color = data['player1color']
     game.stage = 3
     current_time = timezone.now()
+    game.time_color_chosen = current_time
     time_diff = current_time - game.latest_move_datetime
 
     if player_id_request == 1:
         game.time_used_p1 = game.time_used_p1 + time_diff
+        game.total_time_player1 = (
+            game.total_time_player1 + game.time_increment_per_move
+        )
     else:
         game.time_used_p2 = game.time_used_p2 + time_diff
+        game.total_time_player2 = (
+            game.total_time_player2 + game.time_increment_per_move
+        )
+
+    if 3 - data['player1color'] == 1:
+        # next player is player 1
+        # deadline for next move by player 1
+        remaining_time = game.total_time_player1 - game.time_used_p1
+        game.deadline_next_move = game.time_color_chosen + remaining_time
+    else:
+        # next player is player 2
+        # deadline for next move by player 2
+        remaining_time = game.total_time_player2 - game.time_used_p2
+        game.deadline_next_move = game.time_color_chosen + remaining_time
 
     game.save()
     return JsonResponse({
@@ -351,8 +409,11 @@ def choose_color(request, game_id):
         "stage": game.stage,
         "player1color": game.player1color,
         "seconds_used_p1": int(game.time_used_p1.total_seconds()),
-        "seconds_used_p2": int(game.time_used_p2.total_seconds())
+        "seconds_used_p2": int(game.time_used_p2.total_seconds()),
+        'total_time_player1': int(game.total_time_player1.total_seconds()),
+        'total_time_player2': int(game.total_time_player2.total_seconds()),
     })
+
 
 def verify_winning_path(path, board, color):
     reached_0_end = False
@@ -391,7 +452,9 @@ def get_moves(request, game_id):
         'stage': game.stage,
         'winner': game.winner,
         'seconds_used_p1': int(game.time_used_p1.total_seconds()),
-        'seconds_used_p2': int(game.time_used_p2.total_seconds())
+        'seconds_used_p2': int(game.time_used_p2.total_seconds()),
+        'total_time_player1': int(game.total_time_player1.total_seconds()),
+        'total_time_player2': int(game.total_time_player2.total_seconds()),
     }
     return JsonResponse(response)
 
@@ -469,6 +532,18 @@ def start_game(game):
     else:
         print('invalid colorSelectionMode')
     game.game_started_at = timezone.now()
+
+    if ((game.color_selection_mode in (1,2,3) and game.player1color == 1) or
+       (game.color_selection_mode in (4,5,6) and game.cake_cutter == 1)):
+        # player 1 to make the next move
+        game.deadline_next_move = (
+            game.game_started_at + game.total_time_player1
+        )
+    else:
+        game.deadline_next_move = (
+            game.game_started_at + game.total_time_player2
+        )
+
     game.save()
 
 
@@ -520,3 +595,4 @@ def get_player_info(request, game_id):
         'player1color': player1color_response,
         'cake_cutter': cake_cutter_response,
     })
+

@@ -72,7 +72,9 @@
         {% endif %}
         const seconds_used_p1 = {{seconds_used_p1}};
         const seconds_used_p2 = {{seconds_used_p2}};
-        const seconds_current_move = {{seconds_current_move}}
+        const seconds_current_move = {{seconds_current_move}};
+        const time_per_player = {{time_per_player}};
+        const time_increment = {{time_increment}};
         ReactDOM.render(
             <Game
                 stage = {stage}
@@ -93,6 +95,8 @@
                 seconds_used_p2 = {seconds_used_p2}
                 seconds_current_move = {seconds_current_move}
                 use_time_control = {use_time_control}
+                time_per_player = {time_per_player}
+                time_increment = {time_increment}
             />,
             domContainer
        );
