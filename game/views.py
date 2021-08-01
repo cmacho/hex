@@ -515,6 +515,9 @@ def get_update(request, game_id):
     if game.stage == 0:
         response['player1_ready'] = game.player1_ready
         response['player2_ready'] = game.player2_ready
+    if game.stage == 4:
+        response['seconds_used_p1'] = int(game.time_used_p1.total_seconds())
+        response['seconds_used_p2'] = int(game.time_used_p2.total_seconds())
     return JsonResponse(response)
 
 

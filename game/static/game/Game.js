@@ -189,6 +189,8 @@ class Game extends React.Component {
                 update_obj['winner'] = data.winner;
                 update_obj['resigned'] = data.resigned;
                 update_obj['out_of_time'] = data.out_of_time;
+                update_obj['seconds_used_p1'] = data.seconds_used_p1
+                update_obj['seconds_used_p2'] = data.seconds_used_p2
             }
 
             if(data.latest_move) {
@@ -420,18 +422,34 @@ class Game extends React.Component {
                         onLeaveClick={() => this.handleLeaveClick()}
                     />
         } else {
-            var squares = this.state.squares_history[this.state.squares_history.length - 1]
+            var idx = this.state.squares_history.length - 1;
+            var squares = this.state.squares_history[idx]
             var top_div, time_div;
             var winner_name;
+            var remaining_sec_p1 = Math.max(
+                this.state.total_time_player1 - this.state.seconds_used_p1,
+                0
+            );
+            var remaining_sec_p2 = Math.max(
+                this.state.total_time_player2 - this.state.seconds_used_p2,
+                0
+            ).toLocaleString(undefined, {minimumIntegerDigits:2});
+            const minutes_p1 = Math.floor(remaining_sec_p1 / 60);
+            const seconds_p1 = remaining_sec_p1 % 60;
+            const minutes_p2 = Math.floor(remaining_sec_p2 / 60);
+            const seconds_p2 = remaining_sec_p2 % 60;
+            const minutes_p1_str = minutes_p1.toLocaleString(undefined, {minimumIntegerDigits:2});
+            const seconds_p1_str = seconds_p1.toLocaleString(undefined, {minimumIntegerDigits:2});
+            const minutes_p2_str = minutes_p2.toLocaleString(undefined, {minimumIntegerDigits:2});
+            const seconds_p2_str = seconds_p2.toLocaleString(undefined, {minimumIntegerDigits:2});
+
             time_div = (
                 <div>
                     <p>
-                    seconds_used_p1: {this.state.seconds_used_p1}
-                    of {this.state.total_time_player1}
+                    time remaining player1: {minutes_p1_str}:{seconds_p1_str}
                     </p>
                     <p>
-                    seconds_used_p2: {this.state.seconds_used_p2}
-                    of {this.state.total_time_player2}
+                    time remaining player2: {minutes_p2_str}:{seconds_p2_str}
                     </p>
                 </div>
             )
@@ -457,7 +475,8 @@ class Game extends React.Component {
                 top_div = (
                     <div>
                         Waiting for player {this.state.cake_cutter}
-                        to play the first move. Afterwards you get to choose a color.
+                        to play the first move.
+                        Afterwards you get to choose a color.
                     </div>
                );
 
