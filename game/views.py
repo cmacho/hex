@@ -74,16 +74,8 @@ def game(request, game_id):
             game.save()
         else:
             return HttpResponse(f'Game already full')
-    if game.stage == 1:
-        time_on_current_move = timezone.now() - game.game_started_at
-    elif game.stage == 2:
-        time_on_current_move = timezone.now() - game.latest_move_datetime
-    elif game.stage == 3 and game.latest_move_num > 0:
-        time_on_current_move = timezone.now() - game.latest_move_datetime
-    elif game.stage == 3 and game.latest_move_num == 0:
-        time_on_current_move = timezone.now() - game.game_started_at
-    else:
-        time_on_current_move = datetime.timedelta() # 0 seconds
+
+    time_on_current_move = find_time_on_current_move(game)
 
     return render(request, 'game/game.html', {
         'game_id': game.id,
@@ -111,6 +103,25 @@ def game(request, game_id):
         'out_of_time': game.out_of_time,
     })
 
+def find_time_on_current_move(game):
+    """
+    find the time that has already been spent on the current move
+    Args:
+        game (models.Game object): the game to consider
+    Returns:
+        time_on_current_move (datetime.timedelta): time on current move
+    """
+    if game.stage == 1:
+        time_on_current_move = timezone.now() - game.game_started_at
+    elif game.stage == 2:
+        time_on_current_move = timezone.now() - game.latest_move_datetime
+    elif game.stage == 3 and game.latest_move_num > 0:
+        time_on_current_move = timezone.now() - game.latest_move_datetime
+    elif game.stage == 3 and game.latest_move_num == 0:
+        time_on_current_move = timezone.now() - game.game_started_at
+    else:
+        time_on_current_move = datetime.timedelta() # 0 seconds
+    return time_on_current_move
 
 def games(request):
     games = Game.objects.filter(stage=0).all()
@@ -659,3 +670,69 @@ def leave_game(request, game_id):
     return JsonResponse({"accepted": True})
 
 
+@login_required
+def resign(request, game_id):
+    if request.method != 'PUT':
+        return JsonResponse({"error": "PUT request required"}, status=400)
+    try:
+        game = Game.objects.get(pk=game_id)
+    except:
+        return JsonResponse({
+            "error": "game not found",
+            "accepted": False,
+        })
+    if request.user not in [game.player1, game.player2]:
+        return JsonResponse({
+            "error": "user is not one of the players",
+            "accepted": False,
+        })
+    if game.stage == 4:
+        return JsonResponse({
+            "error": "game is already over",
+            "accepted": False
+        })
+
+    if request.user == game.player1:
+        player_resigning = 1
+    elif request.user == game.player2:
+        player_resigning = 2
+    else:
+        raise Exception("this case should not occur")
+
+    #who's turn was it:
+    if game.stage == 1:
+        player_to_move  = game.cake_cutter
+    elif game.stage == 2:
+        player_to_move = 3 - game.cake_cutter
+    elif game.stage == 3:
+        player_to_move = (
+            2 - (game.latest_move_num + game.player1color) % 2
+        )
+    else:
+        player_to_move = None # case should not occur
+
+    time_on_current_move = find_time_on_current_move(game)
+    try:
+        if player_to_move == 1:
+            game.time_used_p1 = game.time_used_p1 + time_on_current_move
+        elif player_to_move == 2:
+            game.time_used_p2 = game.time_used_p2 + time_on_current_move
+        game.stage = 4
+        game.resigned = player_resigning
+        game.winner = 3 - player_resigning
+        game.save()
+    except:
+        return JsonResponse({
+            "error": "could not update game",
+            "accepted": False
+        })
+    return JsonResponse({
+        "accepted": True,
+        "stage": game.stage,
+        "winner": game.winner,
+        "resigned": game.resigned,
+        'seconds_used_p1': int(game.time_used_p1.total_seconds()),
+        'seconds_used_p2': int(game.time_used_p2.total_seconds()),
+        'total_time_player1': int(game.total_time_player1.total_seconds()),
+        'total_time_player2': int(game.total_time_player2.total_seconds()),
+    })

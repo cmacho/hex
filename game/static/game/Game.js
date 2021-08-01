@@ -356,6 +356,29 @@ class Game extends React.Component {
         });
     }
 
+    handleResign() {
+        console.log('resign button pressed')
+        const csrftoken = getCookie('csrftoken');
+        fetch(`/resign/${this.props.game_id}`, {
+            method: 'PUT',
+            headers: {'X-CSRFToken': csrftoken}
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.accepted) {
+                this.setState({
+                    winner: data.winner,
+                    resigned: data.resigned,
+                    stage: data.stage,
+                    seconds_used_p1: data.seconds_used_p1,
+                    seconds_used_p2: data.seconds_used_p2,
+                    total_time_player1: data.total_time_player1,
+                    total_time_player2: data.total_time_player2
+                })
+            }
+        })
+    }
+
     chooseColor(i) {
         var player1color
         if (this.state.my_player_num === 1) {
@@ -504,10 +527,13 @@ class Game extends React.Component {
                 <div>
                 {time_div}
                 {top_div}
-                    <Board
-                        onClick={(i,j) => this.handleClick(i,j)}
-                        squares={squares}
-                    />
+                <Board
+                    onClick={(i,j) => this.handleClick(i,j)}
+                    squares={squares}
+                />
+                <ResignButton
+                    onClick={() => this.handleResign()}
+                />
                 </div>
             )
         }
@@ -656,6 +682,15 @@ function Hexagon(props) {
             >
             </div>
         )
+}
+
+
+function ResignButton(props) {
+    return (
+        <button onClick={props.onClick}>
+            Resign
+        </button>
+    )
 }
 
 
