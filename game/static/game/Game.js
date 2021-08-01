@@ -53,6 +53,7 @@ class Game extends React.Component {
         }
 
         this.state = {
+            out_of_sync: false,
             squares_history: squares_history,
             stage: props.stage,
             my_user_id: props.my_user_id,
@@ -156,7 +157,6 @@ class Game extends React.Component {
         }
     }
 
-
     getUpdate = async () => {
         const url = `/get_update/${this.props.game_id}`;
         const latest_move_num = this.state.squares_history.length - 1;
@@ -197,6 +197,7 @@ class Game extends React.Component {
                 console.log(`latest_move_num = ${latest_move_num}`);
                 console.log(`data.latest_move['move_num'] is ${data.latest_move['move_num']}`);
             }
+
             if ((data.latest_move !== null) &&
                 (data.latest_move['move_num'] === latest_move_num + 1)) {
                 //update move history
@@ -208,7 +209,6 @@ class Game extends React.Component {
                 console.log(update_obj)
                 update_obj['squares_history'] = squares_history.concat([squares_new]);
                 console.log(update_obj)
-
             }
 
             if ([1,2,3].includes(data.stage)) {
@@ -239,8 +239,8 @@ class Game extends React.Component {
 
     handleClick(i,j) {
         console.log(`(${i},${j}) was clicked`)
-        if (!this.state.is_my_turn) {
-            console.log('not my turn.');
+        if (!this.state.is_my_turn || !this.squareIsEmpty(i,j)) {
+            console.log('not my turn or square not empty.');
             return;
         }
         if (![1,3].includes(this.state.stage)) {
@@ -292,10 +292,16 @@ class Game extends React.Component {
         })
         .then(res => res.json())
         .then(data => {
-            this.setState({
-                seconds_used_p1: data.seconds_used_p1,
-                seconds_used_p2: data.seconds_used_p2
-            })
+            if (data['accepted']) {
+                this.setState({
+                    seconds_used_p1: data.seconds_used_p1,
+                    seconds_used_p2: data.seconds_used_p2
+                })
+            } else {
+                this.setState({
+                    out_of_sync: true
+                })
+            }
         })
     }
 
@@ -320,7 +326,7 @@ class Game extends React.Component {
         })
         .then(res => res.json())
         .then(data => {
-            if (data['status'] === 'ok') {
+            if (data['accepted']) {
                 console.log('changing state');
                 this.setState({
                     player1_ready: data.player1_ready,
@@ -338,9 +344,16 @@ class Game extends React.Component {
             method: 'PUT',
             headers: {'X-CSRFToken': csrftoken}
         })
-        .then(res => {
-            window.location.href = '/games'
-        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.accepted) {
+                window.location.href = '/games'
+            } else {
+                this.setState({
+                    out_of_sync: true
+                });
+            }
+        });
     }
 
     chooseColor(i) {
@@ -361,9 +374,8 @@ class Game extends React.Component {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'ok') {
+            if (data.accepted) {
                 //determine whose turn it is
-                console.log('the status is ok');
                 var blueplayer;
                 if (player1color === 1) {
                     blueplayer = 2;
@@ -477,6 +489,14 @@ class Game extends React.Component {
                 top_div = (
                     <div>
                         The game has ended. {winner_name} has won.
+                    </div>
+                )
+            }
+            if (this.state.out_of_sync) {
+                return (
+                    <div>
+                        Local game state out of sync with server.
+                        Please refresh the page.
                     </div>
                 )
             }
