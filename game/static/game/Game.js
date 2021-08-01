@@ -239,85 +239,64 @@ class Game extends React.Component {
 
     handleClick(i,j) {
         console.log(`(${i},${j}) was clicked`)
-        if (this.state.stage === 3 && this.state.is_my_turn
-            && this.squareIsEmpty(i,j)) {
-            const move = {
-                player: this.state.my_player_num,
-                move_num: this.state.squares_history.length,
-                x: i,
-                y: j
-            };
-            const squares_history = this.state.squares_history.slice();
-            const current_squares = squares_history[squares_history.length - 1];
-            const squares_new = this.execute_move(move, current_squares);
+        if (!this.state.is_my_turn) {
+            console.log('not my turn.');
+            return;
+        }
+        if (![1,3].includes(this.state.stage)) {
+            console.log('not expecting move to be played at this stage');
+            return;
+        }
+        const move = {
+            player: this.state.my_player_num,
+            move_num: this.state.squares_history.length,
+            x: i,
+            y: j
+        };
+        const squares_history = this.state.squares_history.slice();
+        const current_squares = squares_history[squares_history.length - 1];
+        const squares_new = this.execute_move(move, current_squares);
+        const update_obj = {
+            squares_history: squares_history.concat([squares_new]),
+            is_my_turn: false
+        };
+        if (this.state.stage === 1) {
+            update_obj['stage'] = 2;
+        }
+        this.setState(update_obj)
+
+        const color = 2 - move.move_num % 2;
+        var winning_path, is_win;
+        if (this.state.stage === 3) {
+            winning_path = checkWinCondition(squares_new, color);
+            is_win = (winning_path !== null);
+        } else {
+            is_win = false;
+        }
+        if (is_win) {
             this.setState({
-                squares_history: squares_history.concat([squares_new]),
-                is_my_turn: false
-            })
-
-            const color = 2 - move.move_num % 2;
-            const winning_path = checkWinCondition(squares_new, color);
-            const is_win = (winning_path !== null);
-            const csrftoken = getCookie('csrftoken');
-            fetch(`/make_move/${this.props.game_id}`, {
-                method: 'PUT',
-                headers: {'X-CSRFToken': csrftoken},
-                body: JSON.stringify({
-                    move: move,
-                    win: is_win,
-                    winning_path: winning_path
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                this.setState({
-                    seconds_used_p1: data.seconds_used_p1,
-                    seconds_used_p2: data.seconds_used_p2
-                })
-            })
-
-            if (is_win) {
-                this.setState({
-                    stage: 4,
-                    winner: move.player
-                })
-            }
-
-        } else if (this.state.stage === 1 && this.state.is_my_turn) {
-            const move = {
-                player: this.state.my_player_num,
-                move_num: this.state.squares_history.length,
-                x: i,
-                y: j
-            };
-            const squares_history = this.state.squares_history.slice();
-            const current_squares = squares_history[squares_history.length - 1];
-            const squares_new = this.execute_move(move, current_squares);
-            this.setState({
-                squares_history: squares_history.concat([squares_new]),
-                is_my_turn: false,
-                stage: 2
-            })
-            const csrftoken = getCookie('csrftoken');
-            const is_win = false;
-            const winning_path = null;
-            fetch(`/make_move/${this.props.game_id}`, {
-                method: 'PUT',
-                headers: {'X-CSRFToken': csrftoken},
-                body: JSON.stringify({
-                    move: move,
-                    win: is_win,
-                    winning_path: winning_path
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                this.setState({
-                    seconds_used_p1: data.seconds_used_p1,
-                    seconds_used_p2: data.seconds_used_p2
-                })
+                stage: 4,
+                winner: move.player
             })
         }
+
+        const csrftoken = getCookie('csrftoken');
+        fetch(`/make_move/${this.props.game_id}`, {
+            method: 'PUT',
+            headers: {'X-CSRFToken': csrftoken},
+            body: JSON.stringify({
+                move: move,
+                win: is_win,
+                winning_path: winning_path
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            this.setState({
+                seconds_used_p1: data.seconds_used_p1,
+                seconds_used_p2: data.seconds_used_p2
+            })
+        })
     }
 
     handleReadyClick() {
