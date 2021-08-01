@@ -69,7 +69,11 @@ class Game extends React.Component {
             player1_ready: props.player1_ready,
             player2_ready: props.player2_ready,
             seconds_used_p1: seconds_used_p1,
-            seconds_used_p2: seconds_used_p2
+            seconds_used_p2: seconds_used_p2,
+            total_time_player1: props.total_time_player1,
+            total_time_player2: props.total_time_player2,
+            resigned: props.resigned,
+            out_of_time: props.out_of_time
         }
     }
 
@@ -147,145 +151,94 @@ class Game extends React.Component {
     }
 
     perhapsGetUpdate = () => {
-        console.log('should I get updates?');
-        if (!this.state.is_my_turn &&
-            (this.state.stage === 3 || this.state.stage === 1) &&
-            this.state.my_user_id !== null) {
-            console.log('getting updates');
+        if (this.state.stage !== 4) {
             this.getUpdate();
-        } else if ((this.state.stage === 2) &&
-                   (this.state.my_player_num == this.state.cake_cutter) &&
-                   (this.state.my_user_id !== null)) {
-            console.log('getting update on player colors');
-            this.getColorUpdate();
-        } else if (this.state.stage == 0) {
-            console.log('getting update on players');
-            this.getPlayersUpdate();
         }
     }
 
+
     getUpdate = async () => {
-        const url = `/game/get_moves/${this.props.game_id}`;
+        const url = `/get_update/${this.props.game_id}`;
         const latest_move_num = this.state.squares_history.length - 1;
         const res = await fetch(url);
         const data = await res.json();
-        console.log(data);
-        console.log(`latest_move_num is ${latest_move_num}`);
-        if (data.latest_move === null) {
-            console.log('latest_move received is null')
-        } else if (data.latest_move['move_num'] === latest_move_num + 1) {
-            const move = data.latest_move;
+        console.log(data)
+
+        if ([0,1,2,3,4].includes(data.stage)) {
+            const update_obj = {
+                stage: data.stage,
+                total_time_player1: data.total_time_player1,
+                total_time_player2: data.total_time_player2
+            }
             const squares_history = this.state.squares_history.slice();
-            const current_squares = (
-                squares_history[squares_history.length - 1]
-            );
-            const squares_new = this.execute_move(move, current_squares);
-            this.setState({
-                squares_history: squares_history.concat([squares_new]),
-                is_my_turn: true,
-                stage: data.stage,
-                winner: data.winner,
-                seconds_used_p1: data.seconds_used_p1,
-                seconds_used_p2: data.seconds_used_p2
-            })
-        } else if (data['move_num'] > latest_move_num + 1) {
-            // TODO handle error
+            if (this.state.stage === 0) {
+                update_obj['player1_id'] = data.player1_id;
+                update_obj['player2_id'] = data.player2_id;
+                update_obj['player1_ready'] = data.player1_ready;
+                update_obj['player2_ready'] = data.player2_ready;
+                update_obj['player1_name'] = data.player1_name;
+                update_obj['player2_name'] = data.player2_name;
+                update_obj['cake_cutter'] = data.cake_cutter;
+            }
+
+            if ([0,1,2].includes(this.state.stage)) {
+                update_obj['player1color'] = data.player1color;
+            }
+
+            if (data.stage === 4) {
+                update_obj['winner'] = data.winner;
+                update_obj['resigned'] = data.resigned;
+                update_obj['out_of_time'] = data.out_of_time;
+            }
+
+            if(data.latest_move) {
+                console.log(`latest_move_num = ${latest_move_num}`);
+                console.log(`data.latest_move['move_num'] is ${data.latest_move['move_num']}`);
+            }
+            if ((data.latest_move !== null) &&
+                (data.latest_move['move_num'] === latest_move_num + 1)) {
+                //update move history
+                const move = data.latest_move;
+                const current_squares = (
+                    squares_history[squares_history.length - 1]
+                );
+                const squares_new = this.execute_move(move, current_squares);
+                console.log(update_obj)
+                update_obj['squares_history'] = squares_history.concat([squares_new]);
+                console.log(update_obj)
+
+            }
+
+            if ([1,2,3].includes(data.stage)) {
+                //update is_my_turn
+                var is_my_turn;
+                var len_squares_hist;
+                if (data.latest_move !== null) {
+                    len_squares_hist = data.latest_move['move_num'] + 1
+                } else {
+                    len_squares_hist = 0
+                }
+                const playerToMove = this.determinePlayerToMove(data.stage,
+                                        data.player1color,data.cake_cutter,
+                                        len_squares_hist)
+                if (this.state.my_player_num === playerToMove) {
+                    is_my_turn = true
+                } else {
+                    is_my_turn = false
+                }
+                update_obj['is_my_turn'] = is_my_turn
+            }
+            this.setState(update_obj)
+        } else {
+            // received some error TODO
         }
     }
 
-    getColorUpdate = async () => {
-        const url = `/get_colors/${this.props.game_id}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        console.log(data)
-        if (data.stage === 3) {
-            //determine whose turn it is
-            var blueplayer;
-            var my_turn;
-            if (data.player1color === 1) {
-                blueplayer = 2
-            } else if (data.player1color === 2) {
-                blueplayer = 1
-            } else {
-                console.log('invalid server response')
-            }
-
-            if (this.state.my_player_num === blueplayer) {
-                my_turn = true;
-            } else {
-                my_turn = false;
-            }
-            this.setState({
-                is_my_turn: my_turn,
-                stage: data.stage,
-                player1color: data.player1color,
-                seconds_used_p1: data.seconds_used_p1,
-                seconds_used_p2: data.seconds_used_p2
-            })
-        }
-    }
-
-    getPlayersUpdate = async () => {
-        const url = `/get_player_info/${this.props.game_id}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        console.log(data)
-        if (data.stage === 0) {
-            this.setState({
-                stage: data.stage,
-                player1_ready: data.player1_ready,
-                player2_ready: data.player2_ready,
-                player1_id: data.player1_id,
-                player2_id: data.player2_id,
-                player1_name: data.player1_name,
-                player2_name: data.player2_name
-            })
-        } else if (data.stage === 1) {
-            var is_my_turn
-            if (this.state.my_player_num === data.cake_cutter) {
-                is_my_turn = true
-            } else {
-                is_my_turn = false
-            }
-            this.setState({
-                stage: data.stage,
-                player1_ready: data.player1_ready,
-                player2_ready: data.player2_ready,
-                player1_id: data.player1_id,
-                player2_id: data.player2_id,
-                player1_name: data.player1_name,
-                player2_name: data.player2_name,
-                player1color: data.player1color,
-                cake_cutter: data.cake_cutter,
-                is_my_turn: is_my_turn
-            })
-        } else if (data.stage === 3) {
-            var is_my_turn
-            if (this.state.my_player_num === data.player1color) {
-                is_my_turn = true
-            } else {
-                is_my_turn = false
-            }
-            this.setState({
-                stage: data.stage,
-                player1_ready: data.player1_ready,
-                player2_ready: data.player2_ready,
-                player1_id: data.player1_id,
-                player2_id: data.player2_id,
-                player1_name: data.player1_name,
-                player2_name: data.player2_name,
-                player1color: data.player1color,
-                cake_cutter: data.cake_cutter,
-                is_my_turn: is_my_turn
-            })
-        }
-    }
 
     handleClick(i,j) {
         console.log(`(${i},${j}) was clicked`)
         if (this.state.stage === 3 && this.state.is_my_turn
             && this.squareIsEmpty(i,j)) {
-            console.log('hello there?'); //TODO remove this
             const move = {
                 player: this.state.my_player_num,
                 move_num: this.state.squares_history.length,
@@ -474,9 +427,11 @@ class Game extends React.Component {
                 <div>
                     <p>
                     seconds_used_p1: {this.state.seconds_used_p1}
+                    of {this.state.total_time_player1}
                     </p>
                     <p>
                     seconds_used_p2: {this.state.seconds_used_p2}
+                    of {this.state.total_time_player2}
                     </p>
                 </div>
             )
@@ -736,7 +691,7 @@ function checkWinCondition(squares, color) {
         for (var i=0; i<11; i++) {
             if (squares[i][0] === color) {
                 q.push([i, 0])
-                distances[i][0] == 1
+                distances[i][0] = 1
             }
         }
     } else {
@@ -781,7 +736,6 @@ function build_path(goal_vertex, distances) {
     var neighbor, neighbors
     const path_arr = [goal_vertex]
     while(current_dist>1) {
-        console.log(`current_dist is ${current_dist}`)
         current_dist = current_dist - 1;
         neighbors = getNeighbors(current_vertex);
         for (neighbor of neighbors) {

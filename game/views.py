@@ -246,7 +246,7 @@ def make_move(request, game_id):
                       f"player {not_cake_cutter} to choose a color")
         })
     elif game.stage == 4:
-        return JsonRespone({"error": "Game has already ended"})
+        return JsonResponse({"error": "Game has already ended"})
 
     # if game.stage is 1 or 3, check whether move came from the player whose
     # turn it actually is. Also set the variable color_to_move
@@ -273,7 +273,6 @@ def make_move(request, game_id):
                         "color_to_move": color_to_move,
                         "color_player_request": color_player_request
             })
-
 
     # now actually make the move
     new_board = game.board.copy()
@@ -316,6 +315,7 @@ def make_move(request, game_id):
     print(f"new_board is {new_board}")
 
     if data['win']:
+        print('data[win]')
         data_win_path = data['winning_path']
 
         verify = verify_winning_path(data_win_path,
@@ -339,7 +339,7 @@ def make_move(request, game_id):
                          "seconds_used_p2": int(game.time_used_p2.total_seconds()),
                          'total_time_player1': int(game.total_time_player1.total_seconds()),
                          'total_time_player2': int(game.total_time_player2.total_seconds()),
-                        })
+    })
 
 
 @login_required
@@ -425,6 +425,7 @@ def verify_winning_path(path, board, color):
         if board[square[0]][square[1]] != color:
             return False
         if (color == 1 and square[0] == 0) or (color == 2 and square[1] == 0):
+            print('data[win]')
             reached_0_end = True
         if (color == 1 and square[0] == 10) or (color == 2 and square[1] == 10):
             reached_10_end = True
@@ -432,47 +433,88 @@ def verify_winning_path(path, board, color):
 
 
 @login_required
-def get_moves(request, game_id):
-    game = Game.objects.get(pk=game_id)
-    if request.user not in [game.player1, game.player2]:
-        return JsonResponse({'error': 'not authorized'})
-    if game.latest_move_num is None or game.latest_move_num == 0:
-        return JsonResponse({'latest_move': None})
-    move = game.moves.get(move_num=game.latest_move_num)
-    response = {
-        'latest_move': {
-            'move_num': move.move_num,
-            'x': move.x,
-            'y': move.y,
-            'player': move.player,
-            'timestamp': move.timestamp
-        },
-        'stage': game.stage,
-        'winner': game.winner,
-        'seconds_used_p1': int(game.time_used_p1.total_seconds()),
-        'seconds_used_p2': int(game.time_used_p2.total_seconds()),
-        'total_time_player1': int(game.total_time_player1.total_seconds()),
-        'total_time_player2': int(game.total_time_player2.total_seconds()),
-    }
-    return JsonResponse(response)
-
-
-@login_required
-def get_colors(request, game_id):
+def get_update(request, game_id):
     try:
         game = Game.objects.get(pk=game_id)
     except:
         return JsonResponse({"error": "game not found"})
     if request.user not in [game.player1, game.player2]:
         return JsonResponse({'error': 'not authorized'})
+
+    #latest move
+    if game.latest_move_num is None or game.latest_move_num == 0:
+        latest_move = None
+    else:
+        try:
+            move = game.moves.get(move_num=game.latest_move_num)
+            latest_move = {
+                'move_num': move.move_num,
+                'x': move.x,
+                'y': move.y,
+                'player': move.player,
+                'timestamp': move.timestamp
+            }
+        except:
+            return JsonResponse({"error": "could not find latest move"})
+
+    # check if player out of time
+    if game.stage in (1,2,3):
+        current_time = timezone.now()
+        deadline = game.deadline_next_move
+        if current_time > deadline + datetime.timedelta(seconds=1):
+            #who's turn was it:
+            if game.stage == 1:
+                out_of_time = game.cake_cutter
+            elif game.stage == 2:
+                out_of_time = 3 - game.cake_cutter
+            elif game.stage == 3:
+                out_of_time = (
+                    2 - (game.latest_move_num + game.player1color) % 2
+                )
+            game.out_of_time = out_of_time
+            game.stage = 4
+            game.winner = 3 - out_of_time
+            if out_of_time == 1:
+                game.time_used_p1 = game.total_time_player1
+            elif out_of_time == 2:
+                game.time_used_p2 = game.total_time_player2
+            game.save()
+
+    # player information
     if game.stage == 0:
-        return JsonResponse({'error': 'game has not started yet'})
+        player1color_response = None
+        cake_cutter_response = None
+    else:
+        player1color_response = game.player1color
+        cake_cutter_response = game.cake_cutter
+    if game.player2 is None:
+        player2_id = None
+        player2_name = None
+    else:
+        player2_id = game.player2.id
+        player2_name = game.player2.username
+
     response = {
-        'player1color': game.player1color,
+        'latest_move': latest_move,
         'stage': game.stage,
+        'winner': game.winner,
         'seconds_used_p1': int(game.time_used_p1.total_seconds()),
         'seconds_used_p2': int(game.time_used_p2.total_seconds()),
+        'total_time_player1': int(game.total_time_player1.total_seconds()),
+        'total_time_player2': int(game.total_time_player2.total_seconds()),
+        'player1color': player1color_response,
+        'cake_cutter': cake_cutter_response,
+        'resigned': game.resigned,
+        'out_of_time': game.out_of_time,
+        'player1_id': game.player1.id,
+        'player2_id': player2_id,
+        'player1_name': game.player1.username,
+        'player2_name': player2_name,
     }
+
+    if game.stage == 0:
+        response['player1_ready'] = game.player1_ready
+        response['player2_ready'] = game.player2_ready
     return JsonResponse(response)
 
 
@@ -562,35 +604,4 @@ def leave_game(request, game_id):
     game.save()
     return JsonResponse({'status':'ok'})
 
-
-@login_required
-def get_player_info(request, game_id):
-    try:
-        game = Game.objects.get(pk=game_id)
-    except:
-        return JsonResponse({"error": "game not found"})
-    if game.stage == 0:
-        player1color_response = None
-        cake_cutter_response = None
-    else:
-        player1color_response = game.player1color
-        cake_cutter_response = game.cake_cutter
-    if game.player2 is None:
-        player2_id = None
-        player2_name = None
-    else:
-        player2_id = game.player2.id
-        player2_name = game.player2.username
-    return JsonResponse({
-        'status': 'ok',
-        'stage': game.stage,
-        'player1_ready': game.player1_ready,
-        'player2_ready': game.player2_ready,
-        'player1_id': game.player1.id,
-        'player2_id': player2_id,
-        'player1_name': game.player1.username,
-        'player2_name': player2_name,
-        'player1color': player1color_response,
-        'cake_cutter': cake_cutter_response,
-    })
 

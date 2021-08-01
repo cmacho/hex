@@ -70,8 +70,20 @@
         {% else %}
             const use_time_control = false;
         {% endif %}
+        {% if resigned %}
+           const resigned = {{resigned}};
+        {% else %}
+            const resigned = null;
+        {% endif %}
+        {% if out_of_time %}
+            const out_of_time = {{out_of_time}};
+        {% else %}
+            const out_of_time = null;
+        {% endif %}
         const seconds_used_p1 = {{seconds_used_p1}};
         const seconds_used_p2 = {{seconds_used_p2}};
+        const total_time_player1 = {{total_time_player1}};
+        const total_time_player2 = {{total_time_player2}};
         const seconds_current_move = {{seconds_current_move}};
         const time_per_player = {{time_per_player}};
         const time_increment = {{time_increment}};
@@ -97,6 +109,10 @@
                 use_time_control = {use_time_control}
                 time_per_player = {time_per_player}
                 time_increment = {time_increment}
+                total_time_player1 = {total_time_player1}
+                total_time_player2 = {total_time_player2}
+                resigned = {resigned}
+                out_of_time = {out_of_time}
             />,
             domContainer
        );

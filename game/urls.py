@@ -13,11 +13,9 @@ urlpatterns = [
 
     #API Routes
     path("make_move/<int:game_id>", views.make_move, name='make_move'),
-    path("game/get_moves/<int:game_id>", views.get_moves, name='get_moves'),
     path("choose_color/<int:game_id>", views.choose_color,
          name='choose_color'),
-    path("get_colors/<int:game_id>", views.get_colors, name='get_colors'),
     path("toggle_rdy/<int:game_id>", views.toggle_rdy, name='toggle_rdy'),
     path("leave_game/<int:game_id>", views.leave_game, name="leave_game"),
-    path("get_player_info/<int:game_id>", views.get_player_info, name="get_player_info")
+    path("get_update/<int:game_id>", views.get_update, name="get_update"),
 ]
