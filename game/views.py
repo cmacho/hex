@@ -259,7 +259,7 @@ def make_move(request, game_id):
 
     # check if time has already run out for the move
     current_time = timezone.now()
-    if current_time > game.deadline_next_move:
+    if game.use_time_control and current_time > game.deadline_next_move:
         game_out_of_time(game)
         return JsonResponse({
             "accepted": False,
@@ -528,7 +528,7 @@ def get_update(request, game_id):
             return JsonResponse({"error": "could not find latest move"})
 
     # check if player out of time
-    if game.stage in (1,2,3):
+    if game.use_time_control and game.stage in (1,2,3):
         current_time = timezone.now()
         deadline = game.deadline_next_move
         if current_time > deadline + datetime.timedelta(seconds=1):

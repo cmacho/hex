@@ -448,25 +448,30 @@ class Game extends React.Component {
                 this.state.total_time_player2 - this.state.seconds_used_p2,
                 0
             );
-            const minutes_p1 = Math.floor(remaining_sec_p1 / 60);
-            const seconds_p1 = remaining_sec_p1 % 60;
-            const minutes_p2 = Math.floor(remaining_sec_p2 / 60);
-            const seconds_p2 = remaining_sec_p2 % 60;
-            const minutes_p1_str = minutes_p1.toLocaleString(undefined, {minimumIntegerDigits:2});
-            const seconds_p1_str = seconds_p1.toLocaleString(undefined, {minimumIntegerDigits:2});
-            const minutes_p2_str = minutes_p2.toLocaleString(undefined, {minimumIntegerDigits:2});
-            const seconds_p2_str = seconds_p2.toLocaleString(undefined, {minimumIntegerDigits:2});
 
-            time_div = (
-                <div>
-                    <p>
-                    time remaining player1: {minutes_p1_str}:{seconds_p1_str}
-                    </p>
-                    <p>
-                    time remaining player2: {minutes_p2_str}:{seconds_p2_str}
-                    </p>
-                </div>
-            )
+            if (this.state.use_time_control) {
+                const minutes_p1 = Math.floor(remaining_sec_p1 / 60);
+                const seconds_p1 = remaining_sec_p1 % 60;
+                const minutes_p2 = Math.floor(remaining_sec_p2 / 60);
+                const seconds_p2 = remaining_sec_p2 % 60;
+                const minutes_p1_str = minutes_p1.toLocaleString(undefined, {minimumIntegerDigits:2});
+                const seconds_p1_str = seconds_p1.toLocaleString(undefined, {minimumIntegerDigits:2});
+                const minutes_p2_str = minutes_p2.toLocaleString(undefined, {minimumIntegerDigits:2});
+                const seconds_p2_str = seconds_p2.toLocaleString(undefined, {minimumIntegerDigits:2});
+
+                time_div = (
+                    <div>
+                        <p>
+                        time remaining player1: {minutes_p1_str}:{seconds_p1_str}
+                        </p>
+                        <p>
+                        time remaining player2: {minutes_p2_str}:{seconds_p2_str}
+                        </p>
+                    </div>
+                );
+            } else {
+                time_div = <div></div>;
+            }
             if (this.state.stage === 1 &&
                 this.state.my_player_num === this.state.cake_cutter) {
                 top_div = (
