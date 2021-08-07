@@ -218,7 +218,7 @@ class Game extends React.Component {
                 if (data.latest_move !== null) {
                     len_squares_hist = data.latest_move['move_num'] + 1
                 } else {
-                    len_squares_hist = 0
+                    len_squares_hist = 1
                 }
                 const playerToMove = this.determinePlayerToMove(data.stage,
                                         data.player1color,data.cake_cutter,
@@ -447,7 +447,7 @@ class Game extends React.Component {
             var remaining_sec_p2 = Math.max(
                 this.state.total_time_player2 - this.state.seconds_used_p2,
                 0
-            ).toLocaleString(undefined, {minimumIntegerDigits:2});
+            );
             const minutes_p1 = Math.floor(remaining_sec_p1 / 60);
             const seconds_p1 = remaining_sec_p1 % 60;
             const minutes_p2 = Math.floor(remaining_sec_p2 / 60);
