@@ -1,5 +1,5 @@
 # hex
-A web application for playing the game of hex over the internet. Hex is a turn based strategy with simple rules. It was invented by mathematicians in the 1940s. See https://en.wikipedia.org/wiki/Hex_(board_game).
+A web application for playing the game of hex over the internet. Hex is a turn based strategy game with simple rules. It was invented by mathematicians in the 1940s. See https://en.wikipedia.org/wiki/Hex_(board_game).
 
 I am submitting this as my final project for [CS50's Web Programming with Python and Javascript](https://cs50.harvard.edu/web/).
 
@@ -22,7 +22,7 @@ See the Dockerfile for python and django version numbers.
 ### Design
 The backend is implemented in django, the frontend in React using Javascript.
 
-To keep the game state between both players synchronous, we use Javascript to make a GET request to a route /get_update/<game_id> every 500 ms. This is not ideal from a performance perspective but it works well enough for a small number of users. I believe WebSockets are usually used to exchange this kind of game data. However, we wanted to build on the django functionality as taught in CS50. We did not aim for performance and scalability.
+To keep the game state between both players synchronous, we use Javascript to make a GET request to a route /get_update/<game_id> every 500 ms. This is not ideal from a performance perspective but it works well enough with a small number of users. I believe WebSockets are usually used to exchange this kind of game data. However, we wanted to build on the django functionality as taught in CS50. We did not aim for performance and scalability.
 
 For creating a grid of hexagons using HTML and CSS, this tutorial was helpful: https://www.codesmite.com/article/how-to-create-pure-css-hexagonal-grids.
 
