@@ -457,28 +457,32 @@ class Game extends React.Component {
             }
             return (
                 <div className="container-md">
+                    <GameStatusBar
+                        use_time_control = {this.props.use_time_control}
+                        remaining_sec_p1 = {remaining_sec_p1}
+                        remaining_sec_p2 = {remaining_sec_p2}
+                        stage = {this.state.stage}
+                        winner = {this.state.winner}
+                        resigned = {this.state.resigned}
+                        out_of_time = {this.state.out_of_time}
+                        my_player_num = {this.state.my_player_num}
+                        cake_cutter = {this.state.cake_cutter}
+                        player1_name = {this.state.player1_name}
+                        player2_name = {this.state.player2_name}
+                        player1color = {this.state.player1color}
+                        chooseColor = {(i) => this.chooseColor(i)}
+                    />
 
-                <GameStatusBar
-                    use_time_control = {this.props.use_time_control}
-                    remaining_sec_p1 = {remaining_sec_p1}
-                    remaining_sec_p2 = {remaining_sec_p2}
-                    stage = {this.state.stage}
-                    winner = {this.state.winner}
-                    my_player_num = {this.state.my_player_num}
-                    cake_cutter = {this.state.cake_cutter}
-                    player1_name = {this.state.player1_name}
-                    player2_name = {this.state.player2_name}
-                    player1color = {this.state.player1color}
-                    chooseColor = {(i) => this.chooseColor(i)}
-                />
+                    <Board
+                        onClick={(i,j) => this.handleClick(i,j)}
+                        squares={squares}
+                    />
 
-                <Board
-                    onClick={(i,j) => this.handleClick(i,j)}
-                    squares={squares}
-                />
-                <ResignButton
-                    onClick={() => this.handleResign()}
-                />
+                    <div className="row resign-bar">
+                        <div className="col-sm-2 col-5 resign" onClick={() => this.handleResign()}>
+                            Resign
+                        </div>
+                    </div>
                 </div>
             )
         }
@@ -549,12 +553,29 @@ function  GameStatusBar(props) {
                props.my_player_num === 3 - props.cake_cutter) {
         top_div = (
             <div>
-                Choose a color.
-                <button onClick={() => props.chooseColor(1)}>Red</button>
-                <button onClick={() => props.chooseColor(2)}>Blue</button>
+                <div>Choose a color.</div>
+                <div>
+                    <button onClick={() => props.chooseColor(1)}>Red</button>
+                    <button onClick={() => props.chooseColor(2)}>Blue</button>
+                </div>
             </div>
        );
     } else if (props.stage === 4) {
+        var firstSentence, secondSentence;
+        if (props.resigned === 1) {
+            firstSentence = `${props.player1_name} has resigned. `;
+        } else if (props.resigned === 2) {
+            firstSentence = `${props.player2_name} has resigned. `;
+        } else {
+            firstSentence = 'The game has ended. '
+        }
+        if (props.out_of_time === 1) {
+            secondSentence = `${props.player1_name} has run out of time. `;
+        } else if (props.out_of_time === 2) {
+            secondSentence = `${props.player2_name} has run out of time. `;
+        } else {
+            secondSentence = "";
+        }
         if (props.winner === 1) {
             winner_name = props.player1_name;
         } else {
@@ -562,7 +583,9 @@ function  GameStatusBar(props) {
         }
         top_div = (
             <div>
-                The game has ended. {winner_name} has won.
+                {firstSentence}
+                {secondSentence}
+                {winner_name} has won.
             </div>
         )
     }
@@ -766,15 +789,6 @@ function Hexagon(props) {
             >
             </div>
         )
-}
-
-
-function ResignButton(props) {
-    return (
-        <button onClick={props.onClick}>
-            Resign
-        </button>
-    )
 }
 
 

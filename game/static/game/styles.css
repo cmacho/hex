@@ -1,6 +1,7 @@
 .status-div {
     padding: 30px;
     margin-bottom: 10px;
+    font-size: large;
 }
 
 .time-div {
@@ -17,7 +18,6 @@
 }
 
 .player-left {
-    font-size: large;
     border: solid black 1px;
     background-color: #c4c4c0;
     border-top-right-radius: .5rem;
@@ -25,7 +25,6 @@
 }
 
 .player-right {
-    font-size: large;
     border: solid black 1px;
     background-color: #c4c4c0;
     border-top-left-radius: .5rem;
@@ -42,6 +41,20 @@
     border: 1px solid black;
     border-top-right-radius: .5rem;
     border-bottom-right-radius: .5rem;
+}
+
+.resign-bar {
+    padding: 30px;
+    margin-top: 10px;
+}
+
+.resign {
+    font-size: large;
+    border: solid black 1px;
+    background-color: #c4c4c0;
+    border-radius: .5rem;
+    padding: 15px;
+    cursor: pointer;
 }
 
 .main-index-div {
