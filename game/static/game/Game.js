@@ -438,8 +438,6 @@ class Game extends React.Component {
         } else {
             var idx = this.state.squares_history.length - 1;
             var squares = this.state.squares_history[idx]
-            var top_div, time_div;
-            var winner_name;
             var remaining_sec_p1 = Math.max(
                 this.state.total_time_player1 - this.state.seconds_used_p1,
                 0
@@ -449,77 +447,6 @@ class Game extends React.Component {
                 0
             );
 
-            if (this.props.use_time_control) {
-                const minutes_p1 = Math.floor(remaining_sec_p1 / 60);
-                const seconds_p1 = remaining_sec_p1 % 60;
-                const minutes_p2 = Math.floor(remaining_sec_p2 / 60);
-                const seconds_p2 = remaining_sec_p2 % 60;
-                const minutes_p1_str = minutes_p1.toLocaleString(undefined, {minimumIntegerDigits:2});
-                const seconds_p1_str = seconds_p1.toLocaleString(undefined, {minimumIntegerDigits:2});
-                const minutes_p2_str = minutes_p2.toLocaleString(undefined, {minimumIntegerDigits:2});
-                const seconds_p2_str = seconds_p2.toLocaleString(undefined, {minimumIntegerDigits:2});
-
-                time_div = (
-                    <div>
-                        <p>
-                        time remaining player1: {minutes_p1_str}:{seconds_p1_str}
-                        </p>
-                        <p>
-                        time remaining player2: {minutes_p2_str}:{seconds_p2_str}
-                        </p>
-                    </div>
-                );
-            } else {
-                time_div = <div></div>;
-            }
-            if (this.state.stage === 1 &&
-                this.state.my_player_num === this.state.cake_cutter) {
-                top_div = (
-                    <div>
-                        Play the first move. Afterwards,
-                        your opponent gets to choose,
-                        which color to continue playing as.
-                    </div>
-               );
-            } else if (this.state.stage === 2 &&
-                       this.state.my_player_num === this.state.cake_cutter) {
-                top_div = (
-                    <div>
-                        Waiting for your opponent to
-                        choose who gets to play as which color.
-                    </div>
-               );
-            } else if (this.state.stage === 1 &&
-                       this.state.my_player_num === 3 - this.state.cake_cutter) {
-                top_div = (
-                    <div>
-                        Waiting for your opponent
-                        to play the first move.
-                        Afterwards you get to choose a color.
-                    </div>
-               );
-
-            } else if (this.state.stage === 2 &&
-                       this.state.my_player_num === 3 - this.state.cake_cutter) {
-                top_div = (
-                    <div>
-                        Choose a color.
-                        <button onClick={() => this.chooseColor(1)}>Red</button>
-                        <button onClick={() => this.chooseColor(2)}>Blue</button>
-                    </div>
-               );
-            } else if (this.state.stage === 4) {
-                if (this.state.winner === 1) {
-                    winner_name = this.state.player1_name;
-                } else {
-                    winner_name = this.state.player2_name;
-                }
-                top_div = (
-                    <div>
-                        The game has ended. {winner_name} has won.
-                    </div>
-                )
-            }
             if (this.state.out_of_sync) {
                 return (
                     <div class="container">

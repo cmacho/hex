@@ -100,8 +100,8 @@
     position: absolute;
     left: 16.7%;
     top: 2.5%;
-    height: 93.1%;
-    width: 64.0%;
+    height: 95.3%;
+    width: 65.0%;
     transform: skew(30deg);
     border-left: blue solid 2px;
     border-right: blue solid 2px;
@@ -112,24 +112,6 @@
 
 @media only screen and (min-width: 2400px) {
 .parallelogram {
-    border-left: blue solid 10px;
-    border-right: blue solid 10px;
-    border-top: red solid 10px;
-    border-bottom: red solid 10px;
-}
-}
-
-@media only screen and (min-width: 2000px) and (max-width: 2400px) {
-.parallelogram {
-    border-left: blue solid 9px;
-    border-right: blue solid 9px;
-    border-top: red solid 9px;
-    border-bottom: red solid 9px;
-}
-}
-
-@media only screen and (min-width: 1600px) and (max-width: 1999px) {
-.parallelogram {
     border-left: blue solid 8px;
     border-right: blue solid 8px;
     border-top: red solid 8px;
@@ -137,7 +119,16 @@
 }
 }
 
-@media only screen and (min-width: 1200px) and (max-width: 1599px) {
+@media only screen and (min-width: 2000px) and (max-width: 2400px) {
+.parallelogram {
+    border-left: blue solid 7px;
+    border-right: blue solid 7px;
+    border-top: red solid 7px;
+    border-bottom: red solid 7px;
+}
+}
+
+@media only screen and (min-width: 1600px) and (max-width: 1999px) {
 .parallelogram {
     border-left: blue solid 6px;
     border-right: blue solid 6px;
@@ -146,21 +137,30 @@
 }
 }
 
-@media only screen and (min-width: 1000px) and (max-width: 1200px) {
+@media only screen and (min-width: 1200px) and (max-width: 1599px) {
 .parallelogram {
-    border-left: blue solid 5px;
-    border-right: blue solid 5px;
-    border-top: red solid 5px;
-    border-bottom: red solid 5px;
+    border-left: blue solid 4px;
+    border-right: blue solid 4px;
+    border-top: red solid 4px;
+    border-bottom: red solid 4px;
 }
 }
 
-@media only screen and (min-width: 620px) and (max-width: 1000px) {
+@media only screen and (min-width: 1000px) and (max-width: 1200px) {
 .parallelogram {
     border-left: blue solid 3px;
     border-right: blue solid 3px;
     border-top: red solid 3px;
     border-bottom: red solid 3px;
+}
+}
+
+@media only screen and (min-width: 620px) and (max-width: 1000px) {
+.parallelogram {
+    border-left: blue solid 2px;
+    border-right: blue solid 2px;
+    border-top: red solid 2px;
+    border-bottom: red solid 2px;
 }
 }
 
