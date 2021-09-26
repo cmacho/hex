@@ -1,12 +1,13 @@
 {% extends 'game/layout.html' %}
 
 {% block body %}
-    hello world
-    {% for game in games %}
-        <div style="border: 1px solid black; margin: 5px; padding: 5px;">
-            <a href="/game/{{game.id}}">
-                {{ game }}
-            </a>
-        </div>
-    {% endfor %}
+    <div class="container">
+        {% for game in games %}
+            <div style="border: 1px solid black; margin: 5px; padding: 5px;">
+                <a href="/game/{{game.id}}">
+                    {{ game }}
+                </a>
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}

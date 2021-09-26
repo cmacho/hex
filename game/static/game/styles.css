@@ -1,5 +1,55 @@
+.status-div {
+    padding: 30px;
+    margin-bottom: 10px;
+}
+
+.time-div {
+    padding: 4px;
+    border-radius: .5rem;
+    background-color: #282828;
+    color: white;
+    width: 55px;
+    margin-bottom: 5px;
+}
+
+.playername {
+    margin: 4px;
+}
+
+.player-left {
+    font-size: large;
+    border: solid black 1px;
+    background-color: #c4c4c0;
+    border-top-right-radius: .5rem;
+    border-bottom-right-radius: .5rem;
+}
+
+.player-right {
+    font-size: large;
+    border: solid black 1px;
+    background-color: #c4c4c0;
+    border-top-left-radius: .5rem;
+    border-bottom-left-radius: .5rem;
+}
+
+.color-left {
+    border: 1px solid black;
+    border-top-left-radius: .5rem;
+    border-bottom-left-radius: .5rem;
+}
+
+.color-right {
+    border: 1px solid black;
+    border-top-right-radius: .5rem;
+    border-bottom-right-radius: .5rem;
+}
+
+.main-index-div {
+    text-align: center;
+}
+
 #surrounding {
-    width: 80%;
+    width: 100%;
     min-width: 260px;
     margin: 0 auto;
     padding-top: 2%;

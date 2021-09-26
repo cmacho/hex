@@ -168,7 +168,9 @@ class Game extends React.Component {
             const update_obj = {
                 stage: data.stage,
                 total_time_player1: data.total_time_player1,
-                total_time_player2: data.total_time_player2
+                total_time_player2: data.total_time_player2,
+                player1_name: data.player1_name,
+                player2_name: data.player2_name
             }
             const squares_history = this.state.squares_history.slice();
             if (this.state.stage === 0) {
@@ -176,8 +178,6 @@ class Game extends React.Component {
                 update_obj['player2_id'] = data.player2_id;
                 update_obj['player1_ready'] = data.player1_ready;
                 update_obj['player2_ready'] = data.player2_ready;
-                update_obj['player1_name'] = data.player1_name;
-                update_obj['player2_name'] = data.player2_name;
                 update_obj['cake_cutter'] = data.cake_cutter;
             }
 
@@ -449,7 +449,7 @@ class Game extends React.Component {
                 0
             );
 
-            if (this.state.use_time_control) {
+            if (this.props.use_time_control) {
                 const minutes_p1 = Math.floor(remaining_sec_p1 / 60);
                 const seconds_p1 = remaining_sec_p1 % 60;
                 const minutes_p2 = Math.floor(remaining_sec_p2 / 60);
@@ -476,8 +476,8 @@ class Game extends React.Component {
                 this.state.my_player_num === this.state.cake_cutter) {
                 top_div = (
                     <div>
-                        Play the first move. Afterwards, player
-                        {3 - this.state.cake_cutter} gets to choose,
+                        Play the first move. Afterwards,
+                        your opponent gets to choose,
                         which color to continue playing as.
                     </div>
                );
@@ -485,7 +485,7 @@ class Game extends React.Component {
                        this.state.my_player_num === this.state.cake_cutter) {
                 top_div = (
                     <div>
-                        Waiting for player  {3 - this.state.cake_cutter} to
+                        Waiting for your opponent to
                         choose who gets to play as which color.
                     </div>
                );
@@ -493,7 +493,7 @@ class Game extends React.Component {
                        this.state.my_player_num === 3 - this.state.cake_cutter) {
                 top_div = (
                     <div>
-                        Waiting for player {this.state.cake_cutter}
+                        Waiting for your opponent
                         to play the first move.
                         Afterwards you get to choose a color.
                     </div>
@@ -522,16 +522,29 @@ class Game extends React.Component {
             }
             if (this.state.out_of_sync) {
                 return (
-                    <div>
+                    <div class="container">
                         Local game state out of sync with server.
                         Please refresh the page.
                     </div>
                 )
             }
             return (
-                <div>
-                {time_div}
-                {top_div}
+                <div className="container-md">
+
+                <GameStatusBar
+                    use_time_control = {this.props.use_time_control}
+                    remaining_sec_p1 = {remaining_sec_p1}
+                    remaining_sec_p2 = {remaining_sec_p2}
+                    stage = {this.state.stage}
+                    winner = {this.state.winner}
+                    my_player_num = {this.state.my_player_num}
+                    cake_cutter = {this.state.cake_cutter}
+                    player1_name = {this.state.player1_name}
+                    player2_name = {this.state.player2_name}
+                    player1color = {this.state.player1color}
+                    chooseColor = {(i) => this.chooseColor(i)}
+                />
+
                 <Board
                     onClick={(i,j) => this.handleClick(i,j)}
                     squares={squares}
@@ -545,6 +558,145 @@ class Game extends React.Component {
     }
 }
 
+function  GameStatusBar(props) {
+    var top_div, player1_time_div, player2_time_div;
+    var winner_name;
+    var leftName, leftTimeDiv, rightName, rightTimeDiv;
+    var leftColor, rightColor;
+
+    if (props.use_time_control) {
+        const minutes_p1 = Math.floor(props.remaining_sec_p1 / 60);
+        const seconds_p1 = props.remaining_sec_p1 % 60;
+        const minutes_p2 = Math.floor(props.remaining_sec_p2 / 60);
+        const seconds_p2 = props.remaining_sec_p2 % 60;
+        const minutes_p1_str = minutes_p1.toLocaleString(undefined, {minimumIntegerDigits:2});
+        const seconds_p1_str = seconds_p1.toLocaleString(undefined, {minimumIntegerDigits:2});
+        const minutes_p2_str = minutes_p2.toLocaleString(undefined, {minimumIntegerDigits:2});
+        const seconds_p2_str = seconds_p2.toLocaleString(undefined, {minimumIntegerDigits:2});
+
+        player1_time_div = (
+            <div className="time-div">
+                {minutes_p1_str}:{seconds_p1_str}
+            </div>
+        );
+        player2_time_div = (
+            <div className="time-div">
+                {minutes_p2_str}:{seconds_p2_str}
+            </div>
+        );
+    } else {
+        player1_time_div = "";
+        player2_time_div = "";
+    }
+
+    top_div = <div style={{height: "15px", width:"5px"}}></div>
+
+    if (props.stage === 1 &&
+        props.my_player_num === props.cake_cutter) {
+        top_div = (
+            <div>
+                Play the first move. Afterwards,
+                your opponent gets to choose,
+                which color to continue playing as.
+            </div>
+       );
+    } else if (props.stage === 2 &&
+               props.my_player_num === props.cake_cutter) {
+        top_div = (
+            <div>
+                Waiting for your opponent to
+                choose who gets to play as which color.
+            </div>
+       );
+    } else if (props.stage === 1 &&
+               props.my_player_num === 3 - props.cake_cutter) {
+        top_div = (
+            <div>
+                Waiting for your opponent
+                to play the first move.
+                Afterwards you get to choose a color.
+            </div>
+       );
+
+    } else if (props.stage === 2 &&
+               props.my_player_num === 3 - props.cake_cutter) {
+        top_div = (
+            <div>
+                Choose a color.
+                <button onClick={() => props.chooseColor(1)}>Red</button>
+                <button onClick={() => props.chooseColor(2)}>Blue</button>
+            </div>
+       );
+    } else if (props.stage === 4) {
+        if (props.winner === 1) {
+            winner_name = props.player1_name;
+        } else {
+            winner_name = props.player2_name;
+        }
+        top_div = (
+            <div>
+                The game has ended. {winner_name} has won.
+            </div>
+        )
+    }
+
+
+    if (props.my_player_num === 1) {
+        leftName = props.player1_name;
+        leftTimeDiv = player1_time_div;
+        leftColor = props.player1color;
+        rightName = props.player2_name;
+        rightTimeDiv = player2_time_div;
+        rightColor = 3 - props.player1color;
+    } else {
+        leftName = props.player2_name;
+        leftTimeDiv = player2_time_div;
+        leftColor = 3 - props.player1color;
+        rightName = props.player1_name;
+        rightTimeDiv = player1_time_div;
+        rightColor = props.player1color;
+    }
+
+    function colorToStyle(color) {
+        var colorWord;
+        if (color === 1) {
+            return {
+                backgroundColor: "red"
+            }
+        } else if (color === 2) {
+            return {
+                backgroundColor: "blue"
+            }
+        } else {
+            return {
+                backgroundColor: "#959595"
+            }
+        }
+    }
+
+    return (
+        <div className="row status-div">
+            <div style={colorToStyle(leftColor)}
+                 className="col-sm-1 col-3 color-left">
+            </div>
+            <div className="col-sm-2 col-5 player-left">
+                <div className="playername">{leftName}</div>
+                {leftTimeDiv}
+            </div>
+            <div className="col-sm">
+                {top_div}
+            </div>
+            <div className="col-sm-2 col-5 player-right">
+                <div className="playername">{rightName}</div>
+                {rightTimeDiv}
+            </div>
+            <div style={colorToStyle(rightColor)}
+                 className="col-sm-1 col-3 color-right">
+            </div>
+        </div>
+    )
+
+}
 
 class Board extends React.Component {
 
@@ -619,20 +771,20 @@ class GameMenu extends React.Component {
     render() {
         var readystring1, readystring2, readyButtonText, leaveButton
         if (this.props.player1_ready) {
-            readystring1 = 'player1 is ready.'
+            readystring1 = 'player1 is ready.';
         } else {
-            readystring1 = 'player1 is not ready'
+            readystring1 = 'player1 is not ready';
         }
         if (this.props.player2_ready) {
-            readystring2 = 'player2 is ready.'
+            readystring2 = 'player2 is ready.';
         } else {
-            readystring2 = 'player2 is not ready'
+            readystring2 = 'player2 is not ready';
         }
-        if ((this.props.my_player_num == 1 && player1_ready) ||
-           (this.props.my_player_num == 2 && player2_ready)) {
-            readyButtonText = 'Not ready'
+        if ((this.props.my_player_num == 1 && this.props.player1_ready) ||
+           (this.props.my_player_num == 2 && this.props.player2_ready)) {
+            readyButtonText = 'Not ready';
         } else {
-            readyButtonText = "Ready"
+            readyButtonText = "Ready";
         }
 
         if (this.props.my_player_num == 2) {
@@ -642,7 +794,7 @@ class GameMenu extends React.Component {
         }
 
         return (
-            <div>
+            <div className="container">
                 <div>
                     Game has not started yet.
                 </div>

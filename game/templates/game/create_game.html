@@ -1,43 +1,45 @@
 {% extends 'game/layout.html' %}
 
 {% block body %}
-    <h2>Create Game</h2>
+    <div class="container">
+        <h2>Create Game</h2>
 
-    {% if message %}
-        <div>{{ message }}</div>
-    {% endif %}
+        {% if message %}
+            <div>{{ message }}</div>
+        {% endif %}
 
-    <form action="{% url 'create_game' %}" method="post">
-        {% csrf_token %}
-        <div>How should colors be assigned? Note that the red player begins. In the cake rule, one players puts the first move for red and then the other player decides whether they want to continue playing as blue or as red. (Kind of like when one person slices a cake in two and the other gets to choose which piece they want.<div>
-        <select name="color-assignment-rule">
-            <option value=1>Cake Rule - random player slices cake</option>
-            <option value=2>Cake Rule - player 1 slices cake</option>
-            <option value=3>Cake Rule - player 2 slices cake</option>
-            <option value=4>Player 1 is red</option>
-            <option value=5>Player 2 is red</option>
-            <option value=6>Random colors</option>
-        </select>
-        <div>Time Control:</div>
-        <select name="use_time_control">
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-        </select>
-        <div>Time for each player:</div>
-        <select name="time-per-player">
-            <option value="0,0,1,0">1 minute</option>
-            <option value="0,0,10,0">10 minutes</option>
-            <option value="0,0,30,0">30 minutes</option>
-            <option value="1,0,0,0">1 day</option>
-        </select>
-        <div>Increment for each move:</div>
-        <select name="time-increment">
-            <option value="0,0,0,5">5 seconds</option>
-            <option value="0,0,0,10">10 seconds</option>
-            <option value="1,0,0,0">1 day</option>
-        </select>
-        <div>
-            <input type="submit" value="Create Game">
-        </div>
-    </form>
+        <form action="{% url 'create_game' %}" method="post">
+            {% csrf_token %}
+            <div>How should colors be assigned? Note that the red player begins. In the cake rule, one players puts the first move for red and then the other player decides whether they want to continue playing as blue or as red. (Kind of like when one person slices a cake in two and the other gets to choose which piece they want.<div>
+            <select name="color-assignment-rule">
+                <option value=1>Cake Rule - random player slices cake</option>
+                <option value=2>Cake Rule - player 1 slices cake</option>
+                <option value=3>Cake Rule - player 2 slices cake</option>
+                <option value=4>Player 1 is red</option>
+                <option value=5>Player 2 is red</option>
+                <option value=6>Random colors</option>
+            </select>
+            <div>Time Control:</div>
+            <select name="use_time_control">
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+            <div>Time for each player:</div>
+            <select name="time-per-player">
+                <option value="0,0,1,0">1 minute</option>
+                <option value="0,0,10,0">10 minutes</option>
+                <option value="0,0,30,0">30 minutes</option>
+                <option value="1,0,0,0">1 day</option>
+            </select>
+            <div>Increment for each move:</div>
+            <select name="time-increment">
+                <option value="0,0,0,5">5 seconds</option>
+                <option value="0,0,0,10">10 seconds</option>
+                <option value="1,0,0,0">1 day</option>
+            </select>
+            <div>
+                <input type="submit" value="Create Game">
+            </div>
+        </form>
+    </div>
 {% endblock %}
