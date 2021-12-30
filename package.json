@@ -1,0 +1,30 @@
+{
+  "name": "hex",
+  "version": "1.0.0",
+  "description": "hex web app",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write \"assets/**/*.{js,jsx}\"",
+    "dev": "npm run build && python manage.py runserver",
+    "build": "parcel build assets/Game.js && mv dist/* game/static/game/"
+  },
+  "context": "browser",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cmacho/hex.git"
+  },
+  "author": "Clemens",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cmacho/hex/issues"
+  },
+  "homepage": "https://github.com/cmacho/hex#readme",
+  "devDependencies": {
+    "parcel": "^2.0.1",
+    "prettier": "^2.5.1"
+  },
+  "dependencies": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  }
+}

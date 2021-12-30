@@ -6,6 +6,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.db import IntegrityError
 from .models import User, Game, Move
 import datetime
 
@@ -64,6 +65,21 @@ def register(request):
 
 
 def game(request, game_id):
+    try: 
+        game = Game.objects.get(pk=game_id)
+    except Exception as e:
+        return HttpResponse(f'Could not find game {e}') #TODO: make 404
+    if request.user not in [game.player1, game.player2]: #TODO: perhaps remove check because is already in API
+        if game.player2 is None:
+            game.player2=request.user
+            game.save()
+        else:
+            return HttpResponse(f'Game already full')
+
+    return render(request, 'game/game.html', {'game_id_json': {"game_id": game_id}})
+
+@login_required
+def get_game_state(request, game_id):
     try:
         game = Game.objects.get(pk=game_id)
     except Exception as e:
@@ -77,14 +93,42 @@ def game(request, game_id):
 
     time_on_current_move = find_time_on_current_move(game)
 
-    return render(request, 'game/game.html', {
+    # build moves array
+    moves_arr = []
+    for move in game.moves.order_by('move_num'):
+        moves_arr.append({
+                "move_num": move.move_num,
+                "x": move.x,
+                "y": move.y,
+                "player": move.player
+        })
+
+    # player info
+    if game.player2 is None:
+        player2_id = None
+        player2_name = None
+    else:
+        player2_id = game.player2.id
+        player2_name = game.player2.username
+
+    # check if player out of time
+    if game.use_time_control and game.stage in (1,2,3):
+        current_time = timezone.now()
+        deadline = game.deadline_next_move
+        if current_time > deadline + datetime.timedelta(seconds=1):
+            game_out_of_time(game)
+
+    response = {
+        'request_user_id': request.user.id,
         'game_id': game.id,
         'stage': game.stage,
-        'player1': game.player1,
-        'player2': game.player2,
+        'player1_id': game.player1.id,
+        'player2_id': player2_id,
+        'player1_name': game.player1.username,
+        'player2_name': player2_name,
         'player1color': game.player1color,
         'color_selection_mode': game.color_selection_mode,
-        'moves': game.moves.order_by('move_num'),
+        'moves': moves_arr,
         'winner': game.winner,
         'cake_cutter': game.cake_cutter,
         'seconds_used_p1': int(game.time_used_p1.total_seconds()),
@@ -101,7 +145,9 @@ def game(request, game_id):
         'time_increment': int(game.time_increment_per_move.total_seconds()),
         'resigned': game.resigned,
         'out_of_time': game.out_of_time,
-    })
+    }
+
+    return JsonResponse(response)
 
 def find_time_on_current_move(game):
     """

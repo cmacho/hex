@@ -19,4 +19,5 @@ urlpatterns = [
     path("leave_game/<int:game_id>", views.leave_game, name="leave_game"),
     path("get_update/<int:game_id>", views.get_update, name="get_update"),
     path("resign/<int:game_id>", views.resign, name="resign"),
+    path("get_state/<int:game_id>", views.get_game_state, name="get_game_state"),
 ]
