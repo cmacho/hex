@@ -10,6 +10,7 @@ urlpatterns = [
     path('games', views.games, name='games'),
     path('game/<int:game_id>', views.game, name='game'),
     path('create_game', views.create_game, name='create_game'),
+    path('about', views.about, name='about'),
 
     #API Routes
     path("make_move/<int:game_id>", views.make_move, name='make_move'),

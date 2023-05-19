@@ -16,6 +16,10 @@ def index(request):
     return render(request, 'game/index.html')
 
 
+def about(request):
+    return render(request, 'game/about.html')
+
+
 def login_view(request):
     if request.method == 'POST':
         username = request.POST['username']
@@ -77,6 +81,7 @@ def game(request, game_id):
             return HttpResponse(f'Game already full')
 
     return render(request, 'game/game.html', {'game_id_json': {"game_id": game_id}})
+
 
 @login_required
 def get_game_state(request, game_id):
@@ -148,6 +153,7 @@ def get_game_state(request, game_id):
     }
 
     return JsonResponse(response)
+
 
 def find_time_on_current_move(game):
     """
